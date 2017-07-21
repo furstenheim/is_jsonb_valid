@@ -41,10 +41,8 @@ lengthCompareJsonbStringValue(const void *a, const void *b)
 
 
 PG_FUNCTION_INFO_V1(is_jsonb_valid);
-
-
 Datum
-is_jsonb_valid (PG_FUNCTION_ARGS)
+is_jsonb_valid(PG_FUNCTION_ARGS)
 {
-    PG_RETURN_BOOL(true);
+    PG_RETURN_BOOL(1 != 2);
 }
