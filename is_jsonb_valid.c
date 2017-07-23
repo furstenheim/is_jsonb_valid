@@ -44,5 +44,25 @@ PG_FUNCTION_INFO_V1(is_jsonb_valid);
 Datum
 is_jsonb_valid(PG_FUNCTION_ARGS)
 {
+    Jsonb *my_schema = PG_GETARG_JSONB(0);
+    Jsonb *my_jsonb = PG_GETARG_JSONB(1);
+    JsonbValue propertyKey;
+    JsonbValue * propertyValue;
+    text* key;
+    propertyKey.type = jbvString;
+    if (my_schema == NULL)
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Can only sum objects")));
+    if (my_jsonb == NULL)
+        PG_RETURN_NULL();
+
+    key = cstring_to_text("type");
+    propertyKey.val.string.val = VARDATA_ANY(key);
+    propertyKey.val.string.len = VARSIZE_ANY_EXHDR(key);
+
+    propertyValue = findJsonbValueFromContainer(&my_schema->root, JB_FOBJECT, &propertyKey);
+    elog(INFO, propertyValue != NULL ? "Property" : "There is no property");
     PG_RETURN_BOOL(1 != 2);
 }
+
+
+

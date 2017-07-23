@@ -1,5 +1,20 @@
 CREATE EXTENSION is_jsonb_valid;
 SELECT is_jsonb_valid('{}', '{}');
+INFO:  There is no property
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+SELECT is_jsonb_valid('{"type": "object"}', '{}');
+INFO:  Property
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+SELECT is_jsonb_valid('{"type": "object"}', '2');
+INFO:  Property
  is_jsonb_valid 
 ----------------
  t

@@ -1,0 +1,19 @@
+CREATE EXTENSION is_jsonb_valid;
+SELECT is_jsonb_valid('{}', '{}');
+ is_jsonb_valid
+----------------
+ t
+(1 row)
+
+SELECT is_jsonb_valid('{"type": "object"}', '{}');
+ is_jsonb_valid
+----------------
+ t
+(1 row)
+
+SELECT is_jsonb_valid('{"type": "object"}', '2');
+ is_jsonb_valid
+----------------
+ f
+(1 row)
+
