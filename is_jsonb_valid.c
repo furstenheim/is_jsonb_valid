@@ -39,6 +39,66 @@ lengthCompareJsonbStringValue(const void *a, const void *b)
     return res;
 }
 
+static bool
+text_isequal(text *txt1, text *txt2)
+{
+	return DatumGetBool(DirectFunctionCall2(texteq,
+											PointerGetDatum(txt1),
+											PointerGetDatum(txt2)));
+}
+
+
+// Taken from jsonb_typeof
+static bool check_type (Jsonb * in, char * type)
+{
+	JsonbIterator *it;
+	JsonbValue	v;
+	char	   *result;
+
+	if (JB_ROOT_IS_OBJECT(in))
+		return strcmp(type, "object") == 0;
+	else if (JB_ROOT_IS_ARRAY(in) && !JB_ROOT_IS_SCALAR(in))
+		return strcmp(type, "array") == 0;
+	else
+	{
+		Assert(JB_ROOT_IS_SCALAR(in));
+
+		it = JsonbIteratorInit(&in->root);
+
+		/*
+		 * A root scalar is stored as an array of one element, so we get the
+		 * array and then its first (and only) member.
+		 */
+		(void) JsonbIteratorNext(&it, &v, true);
+		Assert(v.type == jbvArray);
+		(void) JsonbIteratorNext(&it, &v, true);
+		switch (v.type)
+		{
+			case jbvNull:
+        		return strcmp(type, "null") == 0;
+			case jbvString:
+				return strcmp(type, "string") == 0;
+			case jbvNumeric:
+			    if (strcmp(type, "number") == 0) {
+			        return true;
+			    } else if (strcmp(type, "integer") == 0) {
+                    return DatumGetBool(DirectFunctionCall2(
+                            numeric_eq,
+                            PointerGetDatum((&v)->val.numeric),
+                            DirectFunctionCall1(numeric_floor, PointerGetDatum((&v)->val.numeric))));
+			    } else {
+			        return false;
+			    }
+			case jbvBool:
+				return strcmp(type, "boolean") == 0;
+			default:
+				elog(ERROR, "unknown jsonb scalar type");
+		}
+	}
+    // TODO maybe free iterators
+}
+
+
 
 PG_FUNCTION_INFO_V1(is_jsonb_valid);
 Datum
@@ -60,9 +120,14 @@ is_jsonb_valid(PG_FUNCTION_ARGS)
     propertyKey.val.string.len = VARSIZE_ANY_EXHDR(key);
 
     propertyValue = findJsonbValueFromContainer(&my_schema->root, JB_FOBJECT, &propertyKey);
-    elog(INFO, propertyValue != NULL ? "Property" : "There is no property");
+    if (propertyValue != NULL) {
+        if (propertyValue->type != jbvString)
+            ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Type must be string")));
+        bool isTypeCorrect = check_type(my_jsonb, propertyValue->val.string.val);
+        elog(INFO, isTypeCorrect ? "Type is correct" : "Type is not correct");
+    }
     PG_RETURN_BOOL(1 != 2);
 }
 
-
+// elog(INFO, "%d", strcmp(propertyValue->val.string.val, "object"));
 
