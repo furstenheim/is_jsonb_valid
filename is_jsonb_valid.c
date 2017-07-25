@@ -96,36 +96,80 @@ static bool check_type (Jsonb * in, char * type)
 	}
     // TODO maybe free iterators
 }
-
-static bool _is_jsonb_valid (Jsonb * my_schema, Jsonb * my_jsonb, Jsonb * root_schema)
+// TODO rename my_jsonb to data
+static bool _is_jsonb_valid (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema)
 {
     JsonbValue propertyKey;
     JsonbValue * propertyValue;
     JsonbValue myJsonData;
     text* key;
     propertyKey.type = jbvString;
-    if (my_schema == NULL)
+    bool isValid = true;
+    if (schemaJb == NULL)
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Can only sum objects")));
-    if (my_jsonb == NULL)
+    if (dataJb == NULL)
+        // TODO check required
         return true;
 
+    // type
     key = cstring_to_text("type");
     propertyKey.val.string.val = VARDATA_ANY(key);
     propertyKey.val.string.len = VARSIZE_ANY_EXHDR(key);
 
-    propertyValue = findJsonbValueFromContainer(&my_schema->root, JB_FOBJECT, &propertyKey);
+    propertyValue = findJsonbValueFromContainer(&schemaJb->root, JB_FOBJECT, &propertyKey);
 
     if (propertyValue != NULL) {
         bool isTypeCorrect;
     // TODO accept arrays of types
         if (propertyValue->type != jbvString)
             ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Type must be string")));
-        isTypeCorrect = check_type(my_jsonb, propertyValue->val.string.val);
+        isTypeCorrect = check_type(dataJb, propertyValue->val.string.val);
+        isValid = isValid && isTypeCorrect;
         elog(INFO, isTypeCorrect ? "Type is correct" : "Type is not correct");
     }
 
-    // TODO properties
-    return 1 != 2;
+    // properties
+    key = cstring_to_text("properties");
+    propertyKey.val.string.val = VARDATA_ANY(key);
+    propertyKey.val.string.len = VARSIZE_ANY_EXHDR(key);
+
+    propertyValue = findJsonbValueFromContainer(&schemaJb->root, JB_FOBJECT, &propertyKey);
+    if (propertyValue != NULL) {
+            bool isTypeCorrect;
+            Jsonb * propertiesObject;
+            JsonbIterator * it;
+            JsonbIteratorToken r;
+            JsonbValue keyJbv, subSchemaJbv;
+            if (propertyValue->type != jbvBinary)
+                ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Properties must be an object")));
+            propertiesObject = JsonbValueToJsonb(propertyValue);
+            Assert(JB_ROOT_IS_OBJECT(propertiesObject));
+            elog(INFO, "There are properties to check");
+
+            it = JsonbIteratorInit(&propertiesObject->root);
+            r = JsonbIteratorNext(&it, &keyJbv, true);
+            Assert(r == WJB_BEGIN_OBJECT);
+
+            while (true) {
+                Jsonb * subSchemaJb, *subDataJb;
+                JsonbValue *subDataJbv;
+                bool isPropertyValid;
+                r = JsonbIteratorNext(&it, &keyJbv, true);
+                if (r == WJB_END_OBJECT)
+                    break;
+                r = JsonbIteratorNext(&it, &subSchemaJbv, true);
+                subDataJbv = findJsonbValueFromContainer(&dataJb->root, JB_FOBJECT, &keyJbv);
+                subDataJb = subDataJbv == NULL ? NULL : JsonbValueToJsonb(subDataJbv);
+                subSchemaJb = JsonbValueToJsonb(&subSchemaJbv);
+                isPropertyValid = _is_jsonb_valid(subSchemaJb, subDataJb, root_schema);
+                elog(INFO, isPropertyValid ? "Property is valid": "Property is not valid");
+                isValid = isValid && isPropertyValid;
+            }
+
+
+    }
+
+    return isValid;
 }
 
 PG_FUNCTION_INFO_V1(is_jsonb_valid);

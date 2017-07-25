@@ -16,7 +16,7 @@ SELECT is_jsonb_valid('{"type": "object"}', '2');
 INFO:  Type is not correct
  is_jsonb_valid 
 ----------------
- t
+ f
 (1 row)
 
 SELECT is_jsonb_valid('{"type": "object"}', '{"a": 1}');
@@ -42,6 +42,39 @@ INFO:  Type is correct
 
 SELECT is_jsonb_valid('{"type": "integer"}', '2.5');
 INFO:  Type is not correct
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+SELECT is_jsonb_valid('{"properties": {}}', '2.5');
+INFO:  There are properties to check
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+SELECT is_jsonb_valid('{"properties": {"a": {"type": "integer"}}}', '{"a": 1}');
+INFO:  There are properties to check
+INFO:  Type is not correct
+INFO:  Property is not valid
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+SELECT is_jsonb_valid('{"properties": {"a": {"type": "integer"}}}', '{"a": 2.5}');
+INFO:  There are properties to check
+INFO:  Type is not correct
+INFO:  Property is not valid
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+SELECT is_jsonb_valid('{"properties": {"a": {"type": "integer"}}}', '{"b": 1}');
+INFO:  There are properties to check
+INFO:  Property is valid
  is_jsonb_valid 
 ----------------
  t
