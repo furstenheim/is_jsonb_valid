@@ -53,7 +53,6 @@ static bool check_type (Jsonb * in, char * type)
 {
 	JsonbIterator *it;
 	JsonbValue	v;
-	char	   *result;
 
 	if (JB_ROOT_IS_OBJECT(in))
 		return strcmp(type, "object") == 0;
@@ -108,6 +107,7 @@ is_jsonb_valid(PG_FUNCTION_ARGS)
     Jsonb *my_jsonb = PG_GETARG_JSONB(1);
     JsonbValue propertyKey;
     JsonbValue * propertyValue;
+    JsonbValue myJsonData;
     text* key;
     propertyKey.type = jbvString;
     if (my_schema == NULL)
@@ -120,13 +120,40 @@ is_jsonb_valid(PG_FUNCTION_ARGS)
     propertyKey.val.string.len = VARSIZE_ANY_EXHDR(key);
 
     propertyValue = findJsonbValueFromContainer(&my_schema->root, JB_FOBJECT, &propertyKey);
+
     if (propertyValue != NULL) {
+        bool isTypeCorrect;
+    // TODO accept arrays of types
         if (propertyValue->type != jbvString)
             ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Type must be string")));
-        bool isTypeCorrect = check_type(my_jsonb, propertyValue->val.string.val);
+        isTypeCorrect = check_type(my_jsonb, propertyValue->val.string.val);
         elog(INFO, isTypeCorrect ? "Type is correct" : "Type is not correct");
     }
+
+    // TODO properties
+
+
     PG_RETURN_BOOL(1 != 2);
+}
+
+PG_FUNCTION_INFO_V1(jsonb_get2);
+Datum
+jsonb_get2(PG_FUNCTION_ARGS)
+{
+    Jsonb *jb = PG_GETARG_JSONB(0);
+    text * key;
+    JsonbValue propertyKey;
+    JsonbValue * propertyValue;
+
+    propertyKey.type = jbvString;
+    key = cstring_to_text("a");
+    propertyKey.val.string.val = VARDATA_ANY(key);
+    propertyKey.val.string.len = VARSIZE_ANY_EXHDR(key);
+
+    propertyValue = findJsonbValueFromContainer(&jb->root, JB_FOBJECT, &propertyKey);
+    elog(INFO, propertyValue->type == jbvObject ? "element is object" : "Element is not object");
+    elog(INFO, propertyValue->type == jbvBinary ? "element is binary" : "Element is not binary");
+    PG_RETURN_JSONB(JsonbValueToJsonb(propertyValue));
 }
 
 // elog(INFO, "%d", strcmp(propertyValue->val.string.val, "object"));

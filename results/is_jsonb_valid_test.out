@@ -49,3 +49,24 @@ INFO:  Type is not correct
 
 SELECT is_jsonb_valid('{"type": 1}', '2');
 ERROR:  Type must be string
+select jsonb_get2('{"a": 2}');
+INFO:  Element is not object
+INFO:  Element is not binary
+ jsonb_get2 
+------------
+ 2
+(1 row)
+
+select jsonb_get2('{"a": {"c": 2}}');
+INFO:  Element is not object
+INFO:  element is binary
+ jsonb_get2 
+------------
+ {"c": 2}
+(1 row)
+
+select jsonb_get2('{"b": 2}');
+server closed the connection unexpectedly
+	This probably means the server terminated abnormally
+	before or while processing the request.
+connection to server was lost
