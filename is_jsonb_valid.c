@@ -97,14 +97,8 @@ static bool check_type (Jsonb * in, char * type)
     // TODO maybe free iterators
 }
 
-
-
-PG_FUNCTION_INFO_V1(is_jsonb_valid);
-Datum
-is_jsonb_valid(PG_FUNCTION_ARGS)
+static bool _is_jsonb_valid (Jsonb * my_schema, Jsonb * my_jsonb, Jsonb * root_schema)
 {
-    Jsonb *my_schema = PG_GETARG_JSONB(0);
-    Jsonb *my_jsonb = PG_GETARG_JSONB(1);
     JsonbValue propertyKey;
     JsonbValue * propertyValue;
     JsonbValue myJsonData;
@@ -113,7 +107,7 @@ is_jsonb_valid(PG_FUNCTION_ARGS)
     if (my_schema == NULL)
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Can only sum objects")));
     if (my_jsonb == NULL)
-        PG_RETURN_NULL();
+        return true;
 
     key = cstring_to_text("type");
     propertyKey.val.string.val = VARDATA_ANY(key);
@@ -131,9 +125,17 @@ is_jsonb_valid(PG_FUNCTION_ARGS)
     }
 
     // TODO properties
+    return 1 != 2;
+}
 
-
-    PG_RETURN_BOOL(1 != 2);
+PG_FUNCTION_INFO_V1(is_jsonb_valid);
+Datum
+is_jsonb_valid(PG_FUNCTION_ARGS)
+{
+    Jsonb *my_schema = PG_GETARG_JSONB(0);
+    Jsonb *my_jsonb = PG_GETARG_JSONB(1);
+    bool is_valid = _is_jsonb_valid(my_schema, my_jsonb, my_schema);
+    PG_RETURN_BOOL(is_valid);
 }
 
 PG_FUNCTION_INFO_V1(jsonb_get2);
