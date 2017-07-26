@@ -5,6 +5,8 @@
 #include "utils/jsonb.h"
 PG_MODULE_MAGIC;
 
+//static bool _is_jsonb_valid (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
+
 /* Taken from src/backend/adt/jsonb_utils.c
  * Compare two jbvString JsonbValue values, a and b.
  *
@@ -49,15 +51,15 @@ text_isequal(text *txt1, text *txt2)
 
 
 // Taken from jsonb_typeof
-static bool check_type (Jsonb * in, char * type)
+static bool check_type (Jsonb * in, char * type, int typeLen)
 {
 	JsonbIterator *it;
 	JsonbValue	v;
 
 	if (JB_ROOT_IS_OBJECT(in))
-		return strcmp(type, "object") == 0;
+		return strncmp(type, "object", typeLen) == 0;
 	else if (JB_ROOT_IS_ARRAY(in) && !JB_ROOT_IS_SCALAR(in))
-		return strcmp(type, "array") == 0;
+		return strncmp(type, "array", typeLen) == 0;
 	else
 	{
 		Assert(JB_ROOT_IS_SCALAR(in));
@@ -74,13 +76,13 @@ static bool check_type (Jsonb * in, char * type)
 		switch (v.type)
 		{
 			case jbvNull:
-        		return strcmp(type, "null") == 0;
+        		return strncmp(type, "null", typeLen) == 0;
 			case jbvString:
-				return strcmp(type, "string") == 0;
+				return strncmp(type, "string", typeLen) == 0;
 			case jbvNumeric:
-			    if (strcmp(type, "number") == 0) {
+			    if (strncmp(type, "number", typeLen) == 0) {
 			        return true;
-			    } else if (strcmp(type, "integer") == 0) {
+			    } else if (strncmp(type, "integer", typeLen) == 0) {
                     return DatumGetBool(DirectFunctionCall2(
                             numeric_eq,
                             PointerGetDatum((&v)->val.numeric),
@@ -89,7 +91,7 @@ static bool check_type (Jsonb * in, char * type)
 			        return false;
 			    }
 			case jbvBool:
-				return strcmp(type, "boolean") == 0;
+				return strncmp(type, "boolean", typeLen) == 0;
 			default:
 				elog(ERROR, "unknown jsonb scalar type");
 		}
@@ -123,7 +125,7 @@ static bool _is_jsonb_valid (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_sche
     // TODO accept arrays of types
         if (propertyValue->type != jbvString)
             ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Type must be string")));
-        isTypeCorrect = check_type(dataJb, propertyValue->val.string.val);
+        isTypeCorrect = check_type(dataJb, propertyValue->val.string.val, propertyValue->val.string.len);
         isValid = isValid && isTypeCorrect;
         elog(INFO, isTypeCorrect ? "Type is correct" : "Type is not correct");
     }
