@@ -5,7 +5,7 @@
 #include "utils/jsonb.h"
 PG_MODULE_MAGIC;
 
-//static bool _is_jsonb_valid (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
+static bool _is_jsonb_valid (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
 
 /* Taken from src/backend/adt/jsonb_utils.c
  * Compare two jbvString JsonbValue values, a and b.
@@ -98,6 +98,39 @@ static bool check_type (Jsonb * in, char * type, int typeLen)
 	}
     // TODO maybe free iterators
 }
+
+static bool check_properties (Jsonb * dataJb, JsonbValue * propertyValue, Jsonb * root_schema) {
+        bool isValid = true;
+        Jsonb * propertiesObject;
+        JsonbIterator * it;
+        JsonbIteratorToken r;
+        JsonbValue keyJbv, subSchemaJbv;
+        propertiesObject = JsonbValueToJsonb(propertyValue);
+        Assert(JB_ROOT_IS_OBJECT(propertiesObject));
+        elog(INFO, "There are properties to check");
+
+        it = JsonbIteratorInit(&propertiesObject->root);
+        r = JsonbIteratorNext(&it, &keyJbv, true);
+        Assert(r == WJB_BEGIN_OBJECT);
+
+        while (true) {
+            Jsonb * subSchemaJb, *subDataJb;
+            JsonbValue *subDataJbv;
+            bool isPropertyValid;
+            r = JsonbIteratorNext(&it, &keyJbv, true);
+            if (r == WJB_END_OBJECT)
+                break;
+            r = JsonbIteratorNext(&it, &subSchemaJbv, true);
+            subDataJbv = findJsonbValueFromContainer(&dataJb->root, JB_FOBJECT, &keyJbv);
+            subDataJb = subDataJbv == NULL ? NULL : JsonbValueToJsonb(subDataJbv);
+            subSchemaJb = JsonbValueToJsonb(&subSchemaJbv);
+            isPropertyValid = _is_jsonb_valid(subSchemaJb, subDataJb, root_schema);
+            elog(INFO, isPropertyValid ? "Property is valid": "Property is not valid");
+            isValid = isValid && isPropertyValid;
+        }
+        return isValid;
+
+}
 // TODO rename my_jsonb to data
 static bool _is_jsonb_valid (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema)
 {
@@ -137,38 +170,11 @@ static bool _is_jsonb_valid (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_sche
 
     propertyValue = findJsonbValueFromContainer(&schemaJb->root, JB_FOBJECT, &propertyKey);
     if (propertyValue != NULL) {
-            bool isTypeCorrect;
-            Jsonb * propertiesObject;
-            JsonbIterator * it;
-            JsonbIteratorToken r;
-            JsonbValue keyJbv, subSchemaJbv;
+            bool isPropertiesCorrect;
             if (propertyValue->type != jbvBinary)
                 ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Properties must be an object")));
-            propertiesObject = JsonbValueToJsonb(propertyValue);
-            Assert(JB_ROOT_IS_OBJECT(propertiesObject));
-            elog(INFO, "There are properties to check");
-
-            it = JsonbIteratorInit(&propertiesObject->root);
-            r = JsonbIteratorNext(&it, &keyJbv, true);
-            Assert(r == WJB_BEGIN_OBJECT);
-
-            while (true) {
-                Jsonb * subSchemaJb, *subDataJb;
-                JsonbValue *subDataJbv;
-                bool isPropertyValid;
-                r = JsonbIteratorNext(&it, &keyJbv, true);
-                if (r == WJB_END_OBJECT)
-                    break;
-                r = JsonbIteratorNext(&it, &subSchemaJbv, true);
-                subDataJbv = findJsonbValueFromContainer(&dataJb->root, JB_FOBJECT, &keyJbv);
-                subDataJb = subDataJbv == NULL ? NULL : JsonbValueToJsonb(subDataJbv);
-                subSchemaJb = JsonbValueToJsonb(&subSchemaJbv);
-                isPropertyValid = _is_jsonb_valid(subSchemaJb, subDataJb, root_schema);
-                elog(INFO, isPropertyValid ? "Property is valid": "Property is not valid");
-                isValid = isValid && isPropertyValid;
-            }
-
-
+            isPropertiesCorrect = check_properties(dataJb, propertyValue, root_schema);
+            isValid = isValid && isPropertiesCorrect;
     }
 
     return isValid;
