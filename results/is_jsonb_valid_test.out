@@ -124,6 +124,64 @@ INFO:  Property is valid
  t
 (1 row)
 
+select is_jsonb_valid('{"items": [{"type": "integer"}, {"type": "number"}]}', '[1, 2.5, 3.5]');
+INFO:  Type is correct
+INFO:  Type is correct
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+select is_jsonb_valid('{"items": {"type": "integer"}}', '[1, 2, 3]');
+INFO:  Type is correct
+INFO:  Item is valid
+INFO:  Type is correct
+INFO:  Item is valid
+INFO:  Type is correct
+INFO:  Item is valid
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+select is_jsonb_valid('{"items": {"type": "integer"}}', '[1, 2, 3.5]');
+INFO:  Type is correct
+INFO:  Item is valid
+INFO:  Type is correct
+INFO:  Item is valid
+INFO:  Type is not correct
+INFO:  Item is not valid
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+select is_jsonb_valid('{"items": [{"type": "integer"}, {"type": "number"}], "additionalItems": false}', '[1, 2.5, 3.5]');
+INFO:  Type is correct
+INFO:  Type is correct
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+select is_jsonb_valid('{"items": [{"type": "integer"}, {"type": "number"}], "additionalItems": {"type": "string"}}', '[1, 2.5, 3.5]');
+INFO:  Type is correct
+INFO:  Type is correct
+INFO:  Type is not correct
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+select is_jsonb_valid('{"items": [{"type": "integer"}, {"type": "number"}], "additionalItems": {"type": "number"}}', '[1, 2.5, 3.5]');
+INFO:  Type is correct
+INFO:  Type is correct
+INFO:  Type is correct
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
 SELECT is_jsonb_valid('{"properties": {"a": {"type": "integer"}}}', '{"b": 1}');
 INFO:  There are properties to check
 INFO:  Property is valid

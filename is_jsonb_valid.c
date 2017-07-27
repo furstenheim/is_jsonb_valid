@@ -105,6 +105,10 @@ static bool check_properties (Jsonb * dataJb, JsonbValue * propertyValue, Jsonb 
         JsonbIterator * it;
         JsonbIteratorToken r;
         JsonbValue keyJbv, subSchemaJbv;
+
+        if (propertyValue->type != jbvBinary)
+            ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Properties must be an object")));
+
         propertiesObject = JsonbValueToJsonb(propertyValue);
         Assert(JB_ROOT_IS_OBJECT(propertiesObject));
         elog(INFO, "There are properties to check");
@@ -129,8 +133,94 @@ static bool check_properties (Jsonb * dataJb, JsonbValue * propertyValue, Jsonb 
             isValid = isValid && isPropertyValid;
         }
         return isValid;
-
 }
+
+static bool check_items (Jsonb * dataJb, JsonbValue * itemsValue, JsonbValue * additionalItemsJbv, Jsonb * root_schema) {
+    bool isValid = true;
+    Jsonb * itemsObject;
+    JsonbIterator * it;
+    JsonbIteratorToken r;
+    JsonbValue itemJbv;
+    if (!JB_ROOT_IS_ARRAY(dataJb)) return isValid;
+
+    itemsObject = JsonbValueToJsonb(itemsValue);
+
+    if (JB_ROOT_IS_OBJECT(itemsObject)) {
+        it = JsonbIteratorInit(&dataJb->root);
+        r = JsonbIteratorNext(&it, &itemJbv, true);
+        Assert(r == WJB_BEGIN_ARRAY);
+        while (isValid) {
+            Jsonb * subDataJb;
+            bool isItemValid;
+            r = JsonbIteratorNext(&it, &itemJbv, true);
+
+            if (r == WJB_END_ARRAY) {
+                break;
+            }
+            subDataJb = JsonbValueToJsonb(&itemJbv);
+            isItemValid = _is_jsonb_valid(itemsObject, subDataJb, root_schema);
+            elog(INFO, isItemValid ? "Item is valid" : "Item is not valid");
+            isValid = isValid && isItemValid;
+        }
+    } else if (JB_ROOT_IS_ARRAY(itemsObject)) {
+        JsonbIterator *schemaIt;
+        JsonbIteratorToken schemaR;
+        JsonbValue schemaJbv;
+        Jsonb * additionalItemsJb;
+        bool additionalItemsBuilt = false;
+        bool isItemsObjectFinished = false;
+        it = JsonbIteratorInit(&dataJb->root);
+        r = JsonbIteratorNext(&it, &itemJbv, true);
+
+        schemaIt = JsonbIteratorInit(&itemsObject->root);
+        schemaR = JsonbIteratorNext(&schemaIt, &schemaJbv, true);
+
+        Assert(r == WJB_BEGIN_ARRAY);
+        Assert(schemaR == WJB_BEGIN_ARRAY);
+
+        while (isValid) {
+            bool isItemValid;
+            r = JsonbIteratorNext(&it, &itemJbv, true);
+            if (!isItemsObjectFinished)
+                schemaR = JsonbIteratorNext(&schemaIt, &schemaJbv, true);
+                if (schemaR == WJB_END_ARRAY)
+                    isItemsObjectFinished = true;
+                if (r == WJB_END_ARRAY) {
+                    break;
+                }
+                if (!isItemsObjectFinished) {
+                    Jsonb * subDataJb, * subSchemaJb;
+                    subDataJb = JsonbValueToJsonb(&itemJbv);
+                    subSchemaJb = JsonbValueToJsonb(&schemaJbv);
+                    isItemValid = _is_jsonb_valid(subSchemaJb, subDataJb, root_schema);
+                } else {
+                    Jsonb * subDataJb;
+                    // No more condition on items
+                    if (additionalItemsJbv == NULL) {
+                        break;
+                    } else if (additionalItemsJbv->type == jbvBool) {
+                        isValid = additionalItemsJbv->val.boolean;
+                        break;
+                    } else if (additionalItemsBuilt) {
+                        subDataJb = JsonbValueToJsonb(&itemJbv);
+                        isItemValid = _is_jsonb_valid(additionalItemsJb, subDataJb, root_schema);
+                    } else if (additionalItemsJbv->type == jbvBinary) {
+                        additionalItemsBuilt = true;
+                        additionalItemsJb = JsonbValueToJsonb(additionalItemsJbv);
+                        subDataJb = JsonbValueToJsonb(&itemJbv);
+                        isItemValid = _is_jsonb_valid(additionalItemsJb, subDataJb, root_schema);
+                    } else {
+                        break;
+                    }
+                    isValid = isValid && isItemValid;
+                }
+        }
+    }
+
+    return isValid;
+}
+
+
 // TODO rename my_jsonb to data
 static bool _is_jsonb_valid (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema)
 {
@@ -186,12 +276,29 @@ static bool _is_jsonb_valid (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_sche
     propertyValue = findJsonbValueFromContainer(&schemaJb->root, JB_FOBJECT, &propertyKey);
     if (propertyValue != NULL) {
             bool isPropertiesCorrect;
-            if (propertyValue->type != jbvBinary)
-                ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Properties must be an object")));
             isPropertiesCorrect = check_properties(dataJb, propertyValue, root_schema);
             isValid = isValid && isPropertiesCorrect;
     }
 
+    // items
+    key = cstring_to_text("items");
+    propertyKey.val.string.val = VARDATA_ANY(key);
+    propertyKey.val.string.len = VARSIZE_ANY_EXHDR(key);
+
+    propertyValue = findJsonbValueFromContainer(&schemaJb->root, JB_FOBJECT, &propertyKey);
+
+    if (propertyValue != NULL) {
+        JsonbValue additionalItemsKeyJb;
+        JsonbValue * additionalItemsJb;
+        text* additionalItemsKey;
+        additionalItemsKeyJb.type = jbvString;
+        additionalItemsKey = cstring_to_text("additionalItems");
+        additionalItemsKeyJb.val.string.val = VARDATA_ANY(additionalItemsKey);
+        additionalItemsKeyJb.val.string.len = VARSIZE_ANY_EXHDR(additionalItemsKey);
+
+        additionalItemsJb = findJsonbValueFromContainer(&schemaJb->root, JB_FOBJECT, &additionalItemsKeyJb);
+        isValid = isValid && check_items(dataJb, propertyValue, additionalItemsJb, root_schema);
+    }
     return isValid;
 }
 
