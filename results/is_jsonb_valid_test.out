@@ -90,9 +90,34 @@ INFO:  Property is not valid
  f
 (1 row)
 
+--- property is compared with length of key, in this case 4
 SELECT is_jsonb_valid('{"properties": {"a": {"type": "inte"}}}', '{"a": 2}');
 INFO:  There are properties to check
 INFO:  Type is correct
+INFO:  Property is valid
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+SELECT is_jsonb_valid('{"properties": {"a": {"required": true}}}', '{}');
+INFO:  There are properties to check
+INFO:  Property is not valid
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+SELECT is_jsonb_valid('{"properties": {"a": {"required": false}}}', '{}');
+INFO:  There are properties to check
+INFO:  Property is valid
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+SELECT is_jsonb_valid('{"properties": {"a": {"required": true}}}', '{"a": 1}');
+INFO:  There are properties to check
 INFO:  Property is valid
  is_jsonb_valid 
 ----------------

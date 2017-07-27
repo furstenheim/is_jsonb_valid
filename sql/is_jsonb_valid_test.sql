@@ -13,6 +13,9 @@ SELECT is_jsonb_valid('{"properties": {"a": {"type": "integer"}}}', '{"a": 2}');
 SELECT is_jsonb_valid('{"properties": {"a": {"type": "integer"}}}', '{"a": 2.5}');
 --- property is compared with length of key, in this case 4
 SELECT is_jsonb_valid('{"properties": {"a": {"type": "inte"}}}', '{"a": 2}');
+SELECT is_jsonb_valid('{"properties": {"a": {"required": true}}}', '{}');
+SELECT is_jsonb_valid('{"properties": {"a": {"required": false}}}', '{}');
+SELECT is_jsonb_valid('{"properties": {"a": {"required": true}}}', '{"a": 1}');
 
 SELECT is_jsonb_valid('{"properties": {"a": {"type": "integer"}}}', '{"b": 1}');
 

@@ -138,13 +138,28 @@ static bool _is_jsonb_valid (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_sche
     JsonbValue * propertyValue;
     JsonbValue myJsonData;
     text* key;
-    propertyKey.type = jbvString;
     bool isValid = true;
+    propertyKey.type = jbvString;
     if (schemaJb == NULL)
-        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Can only sum objects")));
-    if (dataJb == NULL)
-        // TODO check required
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Schema cannot be undefined")));
+
+    // required
+    key = cstring_to_text("required");
+    propertyKey.val.string.val = VARDATA_ANY(key);
+    propertyKey.val.string.len = VARSIZE_ANY_EXHDR(key);
+
+    propertyValue = findJsonbValueFromContainer(&schemaJb->root, JB_FOBJECT, &propertyKey);
+
+
+    if (dataJb == NULL) {
+        // required
+        if (propertyValue != NULL && propertyValue->type == jbvBool) {
+               return propertyValue->val.boolean != true;
+
+        }
         return true;
+    }
+    // TODO required as object
 
     // type
     key = cstring_to_text("type");
