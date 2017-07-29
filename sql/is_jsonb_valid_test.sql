@@ -7,7 +7,12 @@ SELECT is_jsonb_valid('{"type": "number"}', '2');
 SELECT is_jsonb_valid('{"type": "integer"}', '2');
 SELECT is_jsonb_valid('{"minimum": 3}', '2');
 SELECT is_jsonb_valid('{"minimum": 1}', '2');
+SELECT is_jsonb_valid('{"minimum": 2}', '2');
 SELECT is_jsonb_valid('{"minimum": 2, "exclusiveMinimum": true}', '2');
+SELECT is_jsonb_valid('{"maximum": 3}', '2');
+SELECT is_jsonb_valid('{"maximum": 1}', '2');
+SELECT is_jsonb_valid('{"maximum": 2}', '2');
+SELECT is_jsonb_valid('{"maximum": 2, "exclusiveMaximum": true}', '2');
 SELECT is_jsonb_valid('{"type": "integer"}', '2');
 
 SELECT is_jsonb_valid('{"type": "integer"}', '2.5');

@@ -53,8 +53,40 @@ SELECT is_jsonb_valid('{"minimum": 1}', '2');
  t
 (1 row)
 
+SELECT is_jsonb_valid('{"minimum": 2}', '2');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
 SELECT is_jsonb_valid('{"minimum": 2, "exclusiveMinimum": true}', '2');
 INFO:  Value is not strictly bigger than minimum
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+SELECT is_jsonb_valid('{"maximum": 3}', '2');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+SELECT is_jsonb_valid('{"maximum": 1}', '2');
+INFO:  Value is not smaller than maximum
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+SELECT is_jsonb_valid('{"maximum": 2}', '2');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+SELECT is_jsonb_valid('{"maximum": 2, "exclusiveMaximum": true}', '2');
+INFO:  Value is not strictly smaller than maximum
  is_jsonb_valid 
 ----------------
  f
@@ -219,24 +251,6 @@ INFO:  Property is valid
 
 SELECT is_jsonb_valid('{"type": 1}', '2');
 ERROR:  Type must be string
-select jsonb_get2('{"a": 2}');
-INFO:  Element is not object
-INFO:  Element is not binary
- jsonb_get2 
-------------
- 2
-(1 row)
-
-select jsonb_get2('{"a": {"c": 2}}');
-INFO:  Element is not object
-INFO:  element is binary
- jsonb_get2 
-------------
- {"c": 2}
-(1 row)
-
-select jsonb_get2('{"b": 2}');
-server closed the connection unexpectedly
-	This probably means the server terminated abnormally
-	before or while processing the request.
-connection to server was lost
+--select jsonb_get2('{"a": 2}');
+--select jsonb_get2('{"a": {"c": 2}}');
+--select jsonb_get2('{"b": 2}');

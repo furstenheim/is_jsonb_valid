@@ -269,6 +269,55 @@ static bool validate_min (Jsonb * schemaJb, Jsonb * dataJb)
     return true;
 }
 
+static bool validate_max (Jsonb * schemaJb, Jsonb * dataJb)
+{
+    JsonbIterator *it;
+    JsonbValue	v;
+    JsonbValue maxKey, exclusiveMaxKey;
+    JsonbValue *maxValue, *exclusiveMaxValue;
+    text *maxText, *exclusiveMaxText;
+    bool isValid = true;
+    if (!check_type(dataJb, "number", 6))
+        return true;
+
+    maxKey.type = jbvString;
+    maxText = cstring_to_text("maximum");
+    maxKey.val.string.val = VARDATA_ANY(maxText);
+    maxKey.val.string.len = VARSIZE_ANY_EXHDR(maxText);
+
+    maxValue = findJsonbValueFromContainer(&schemaJb->root, JB_FOBJECT, &maxKey);
+
+    if (maxValue == NULL || maxValue->type != jbvNumeric)
+        return true;
+
+	it = JsonbIteratorInit(&dataJb->root);
+    // scalar is saved as array of one element
+    (void) JsonbIteratorNext(&it, &v, true);
+    Assert(v.type == jbvArray);
+    (void) JsonbIteratorNext(&it, &v, true);
+
+    if (DatumGetBool(DirectFunctionCall2(numeric_gt, PointerGetDatum(v.val.numeric), PointerGetDatum(maxValue->val.numeric)))) {
+        elog(INFO, "Value is not smaller than maximum");
+        return false;
+    }
+
+    exclusiveMaxKey.type = jbvString;
+    exclusiveMaxText = cstring_to_text("exclusiveMaximum");
+    exclusiveMaxKey.val.string.val = VARDATA_ANY(exclusiveMaxText);
+    exclusiveMaxKey.val.string.len = VARSIZE_ANY_EXHDR(exclusiveMaxText);
+
+    exclusiveMaxValue = findJsonbValueFromContainer(&schemaJb->root, JB_FOBJECT, &exclusiveMaxKey);
+
+    if (exclusiveMaxValue == NULL || exclusiveMaxValue->type != jbvBool || exclusiveMaxValue->val.boolean != true)
+        return true;
+
+    if (DatumGetBool(DirectFunctionCall2(numeric_eq, PointerGetDatum(v.val.numeric), PointerGetDatum(maxValue->val.numeric)))) {
+        elog(INFO, "Value is not strictly smaller than maximum");
+        return false;
+    }
+    return true;
+}
+
 static bool _is_jsonb_valid (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema)
 {
     JsonbValue propertyKey;
@@ -348,6 +397,7 @@ static bool _is_jsonb_valid (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_sche
     }
 
     isValid = isValid && validate_min(schemaJb, dataJb);
+    isValid = isValid && validate_max(schemaJb, dataJb);
     return isValid;
 }
 
