@@ -7,6 +7,8 @@ PG_MODULE_MAGIC;
 
 static bool _is_jsonb_valid (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
 
+static JsonbValue * get_jbv_from_key (Jsonb * in, const char * key);
+
 /* Taken from src/backend/adt/jsonb_utils.c
  * Compare two jbvString JsonbValue values, a and b.
  *
@@ -224,19 +226,12 @@ static bool validate_min (Jsonb * schemaJb, Jsonb * dataJb)
 {
     JsonbIterator *it;
     JsonbValue	v;
-    JsonbValue minKey, exclusiveMinKey;
     JsonbValue *minValue, *exclusiveMinValue;
-    text *minText, *exclusiveMinText;
     bool isValid = true;
     if (!check_type(dataJb, "number", 6))
         return true;
 
-    minKey.type = jbvString;
-    minText = cstring_to_text("minimum");
-    minKey.val.string.val = VARDATA_ANY(minText);
-    minKey.val.string.len = VARSIZE_ANY_EXHDR(minText);
-
-    minValue = findJsonbValueFromContainer(&schemaJb->root, JB_FOBJECT, &minKey);
+    minValue = get_jbv_from_key(schemaJb, "minimum");
 
     if (minValue == NULL || minValue->type != jbvNumeric)
         return true;
@@ -252,12 +247,7 @@ static bool validate_min (Jsonb * schemaJb, Jsonb * dataJb)
         return false;
     }
 
-    exclusiveMinKey.type = jbvString;
-    exclusiveMinText = cstring_to_text("exclusiveMinimum");
-    exclusiveMinKey.val.string.val = VARDATA_ANY(exclusiveMinText);
-    exclusiveMinKey.val.string.len = VARSIZE_ANY_EXHDR(exclusiveMinText);
-
-    exclusiveMinValue = findJsonbValueFromContainer(&schemaJb->root, JB_FOBJECT, &exclusiveMinKey);
+    exclusiveMinValue = get_jbv_from_key(schemaJb, "exclusiveMinimum");
 
     if (exclusiveMinValue == NULL || exclusiveMinValue->type != jbvBool || exclusiveMinValue->val.boolean != true)
         return true;
@@ -273,19 +263,13 @@ static bool validate_max (Jsonb * schemaJb, Jsonb * dataJb)
 {
     JsonbIterator *it;
     JsonbValue	v;
-    JsonbValue maxKey, exclusiveMaxKey;
     JsonbValue *maxValue, *exclusiveMaxValue;
-    text *maxText, *exclusiveMaxText;
     bool isValid = true;
     if (!check_type(dataJb, "number", 6))
         return true;
 
-    maxKey.type = jbvString;
-    maxText = cstring_to_text("maximum");
-    maxKey.val.string.val = VARDATA_ANY(maxText);
-    maxKey.val.string.len = VARSIZE_ANY_EXHDR(maxText);
 
-    maxValue = findJsonbValueFromContainer(&schemaJb->root, JB_FOBJECT, &maxKey);
+    maxValue = get_jbv_from_key(schemaJb, "maximum");
 
     if (maxValue == NULL || maxValue->type != jbvNumeric)
         return true;
@@ -301,12 +285,7 @@ static bool validate_max (Jsonb * schemaJb, Jsonb * dataJb)
         return false;
     }
 
-    exclusiveMaxKey.type = jbvString;
-    exclusiveMaxText = cstring_to_text("exclusiveMaximum");
-    exclusiveMaxKey.val.string.val = VARDATA_ANY(exclusiveMaxText);
-    exclusiveMaxKey.val.string.len = VARSIZE_ANY_EXHDR(exclusiveMaxText);
-
-    exclusiveMaxValue = findJsonbValueFromContainer(&schemaJb->root, JB_FOBJECT, &exclusiveMaxKey);
+    exclusiveMaxValue = get_jbv_from_key(schemaJb, "exclusiveMaximum");
 
     if (exclusiveMaxValue == NULL || exclusiveMaxValue->type != jbvBool || exclusiveMaxValue->val.boolean != true)
         return true;
@@ -316,6 +295,15 @@ static bool validate_max (Jsonb * schemaJb, Jsonb * dataJb)
         return false;
     }
     return true;
+}
+
+
+static bool validate_any_of (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema)
+{
+    JsonbValue * propertyValue;
+    bool isValid = true;
+    propertyValue = get_jbv_from_key("schemaJb", "anyOf");
+
 }
 
 static bool _is_jsonb_valid (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema)
@@ -431,5 +419,20 @@ jsonb_get2(PG_FUNCTION_ARGS)
     PG_RETURN_JSONB(JsonbValueToJsonb(propertyValue));
 }
 
+
+static JsonbValue * get_jbv_from_key (Jsonb * in, const char * key)
+{
+    JsonbValue propertyKey;
+    JsonbValue * propertyValue;
+    JsonbValue myJsonData;
+    text* keyText;
+    propertyKey.type = jbvString;
+    keyText = cstring_to_text(key);
+    propertyKey.val.string.val = VARDATA_ANY(keyText);
+    propertyKey.val.string.len = VARSIZE_ANY_EXHDR(keyText);
+    // findJsonbValueFromContainer returns palloced value
+    propertyValue = findJsonbValueFromContainer(&in->root, JB_FOBJECT, &propertyKey);
+    return propertyValue;
+}
 // elog(INFO, "%d", strcmp(propertyValue->val.string.val, "object"));
 
