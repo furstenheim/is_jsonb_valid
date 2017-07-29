@@ -474,6 +474,37 @@ static bool validate_enum (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema
         return isValid;
 }
 
+static bool validate_length (Jsonb * schemaJb, Jsonb * dataJb)
+{
+    JsonbIterator *it;
+    JsonbValue	v;
+    JsonbValue *minLengthValue, *maxLengthValue;
+    bool isValid = true;
+    // bool isValid = true;
+    if (!check_type(dataJb, "string", 6))
+        return true;
+
+	it = JsonbIteratorInit(&dataJb->root);
+    // scalar is saved as array of one element
+    (void) JsonbIteratorNext(&it, &v, true);
+    Assert(v.type == jbvArray);
+    (void) JsonbIteratorNext(&it, &v, true);
+
+
+    minLengthValue = get_jbv_from_key(schemaJb, "minLength");
+
+    if (minLengthValue != NULL && minLengthValue->type == jbvNumeric) {
+        isValid = isValid && DatumGetBool(DirectFunctionCall2(numeric_ge, DirectFunctionCall1(int4_numeric, v.val.string.len), PointerGetDatum(minLengthValue->val.numeric)));
+    }
+
+    maxLengthValue = get_jbv_from_key(schemaJb, "maxLength");
+
+    if (maxLengthValue != NULL && maxLengthValue->type == jbvNumeric) {
+        isValid = isValid && DatumGetBool(DirectFunctionCall2(numeric_le, DirectFunctionCall1(int4_numeric, v.val.string.len), PointerGetDatum(maxLengthValue->val.numeric)));
+    }
+    return isValid;
+}
+
 static bool _is_jsonb_valid (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema)
 {
     JsonbValue propertyKey;
@@ -563,6 +594,7 @@ static bool _is_jsonb_valid (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_sche
     // TODO ref
 
     isValid = isValid && validate_enum(schemaJb, dataJb, root_schema);
+    isValid = isValid && validate_length(schemaJb, dataJb);
     return isValid;
 }
 
