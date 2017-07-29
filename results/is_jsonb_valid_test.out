@@ -40,6 +40,37 @@ INFO:  Type is correct
  t
 (1 row)
 
+select is_jsonb_valid('{"enum": [ 1, 2, 3, {"a": 2}]}', '1');
+INFO:  Iterating
+INFO:  Is valid
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+select is_jsonb_valid('{"enum": [ 1, 2, 3, {"a": 2}]}', '{"a": 2}');
+INFO:  Iterating
+INFO:  Iterating
+INFO:  Iterating
+INFO:  Iterating
+INFO:  Is valid
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+select is_jsonb_valid('{"enum": [ 1, 2, 3, {"a": 2}]}', '{"a": 1}');
+INFO:  Iterating
+INFO:  Iterating
+INFO:  Iterating
+INFO:  Iterating
+INFO:  Iterating
+INFO:  Is not valid
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
 SELECT is_jsonb_valid('{"anyOf": [{"type": "number"}, {"type": "integer"}]}', '2');
 INFO:  Type is correct
  is_jsonb_valid 

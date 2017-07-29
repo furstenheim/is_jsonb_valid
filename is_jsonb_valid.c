@@ -436,9 +436,41 @@ static bool validate_unique_items (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * roo
                 if (j >= i)
                     break;
                 subDataJb2 = JsonbValueToJsonb(&v2);
-                isValid = isValid && compareJsonbContainers(&subDataJb1->root, &subDataJb2->root);
+                isValid = isValid && (compareJsonbContainers(&subDataJb1->root, &subDataJb2->root) != 0);
             }
         }
+        return isValid;
+}
+
+static bool validate_enum (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema)
+{
+        JsonbValue * propertyValue;
+        Jsonb * enumJb;
+        JsonbIterator *it;
+        JsonbValue v;
+        JsonbIteratorToken r;
+        bool isValid = false;
+        propertyValue = get_jbv_from_key(schemaJb, "enum");
+        if (propertyValue == NULL || propertyValue->type != jbvBinary)
+        {
+            return true;
+            elog(INFO, "Property is not valid");
+        }
+        enumJb = JsonbValueToJsonb(propertyValue);
+        if (!JB_ROOT_IS_ARRAY(enumJb))
+            return true;
+        it = JsonbIteratorInit(&enumJb->root);
+        r = JsonbIteratorNext(&it, &v, true);
+        Assert(r == WJB_BEGIN_ARRAY);
+        while (!isValid) {
+            Jsonb * subSchemaJb;
+            r = JsonbIteratorNext(&it, &v, true);
+            if (r == WJB_END_ARRAY)
+                break;
+            subSchemaJb = JsonbValueToJsonb(&v);
+            isValid = isValid || (compareJsonbContainers(&dataJb->root, &subSchemaJb->root) == 0);
+        }
+
         return isValid;
 }
 
@@ -527,6 +559,10 @@ static bool _is_jsonb_valid (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_sche
     isValid = isValid && validate_one_of(schemaJb, dataJb, root_schema);
     isValid = isValid && validate_unique_items(schemaJb, dataJb, root_schema);
 
+    // TODO additional properties
+    // TODO ref
+
+    isValid = isValid && validate_enum(schemaJb, dataJb, root_schema);
     return isValid;
 }
 
