@@ -40,6 +40,33 @@ INFO:  Type is correct
  t
 (1 row)
 
+SELECT is_jsonb_valid('{"minimum": 3}', '2');
+INFO:  Value is not bigger than minimum
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+SELECT is_jsonb_valid('{"minimum": 1}', '2');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+SELECT is_jsonb_valid('{"minimum": 2, "exclusiveMinimum": true}', '2');
+INFO:  Value is not strictly bigger than minimum
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+SELECT is_jsonb_valid('{"type": "integer"}', '2');
+INFO:  Type is correct
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
 SELECT is_jsonb_valid('{"type": "integer"}', '2.5');
 INFO:  Type is not correct
  is_jsonb_valid 

@@ -85,8 +85,8 @@ static bool check_type (Jsonb * in, char * type, int typeLen)
 			    } else if (strncmp(type, "integer", typeLen) == 0) {
                     return DatumGetBool(DirectFunctionCall2(
                             numeric_eq,
-                            PointerGetDatum((&v)->val.numeric),
-                            DirectFunctionCall1(numeric_floor, PointerGetDatum((&v)->val.numeric))));
+                            PointerGetDatum(v.val.numeric),
+                            DirectFunctionCall1(numeric_floor, PointerGetDatum(v.val.numeric))));
 			    } else {
 			        return false;
 			    }
@@ -220,8 +220,55 @@ static bool check_items (Jsonb * dataJb, JsonbValue * itemsValue, JsonbValue * a
     return isValid;
 }
 
+static bool validate_min (Jsonb * schemaJb, Jsonb * dataJb)
+{
+    JsonbIterator *it;
+    JsonbValue	v;
+    JsonbValue minKey, exclusiveMinKey;
+    JsonbValue *minValue, *exclusiveMinValue;
+    text *minText, *exclusiveMinText;
+    bool isValid = true;
+    if (!check_type(dataJb, "number", 6))
+        return true;
 
-// TODO rename my_jsonb to data
+    minKey.type = jbvString;
+    minText = cstring_to_text("minimum");
+    minKey.val.string.val = VARDATA_ANY(minText);
+    minKey.val.string.len = VARSIZE_ANY_EXHDR(minText);
+
+    minValue = findJsonbValueFromContainer(&schemaJb->root, JB_FOBJECT, &minKey);
+
+    if (minValue == NULL || minValue->type != jbvNumeric)
+        return true;
+
+	it = JsonbIteratorInit(&dataJb->root);
+    // scalar is saved as array of one element
+    (void) JsonbIteratorNext(&it, &v, true);
+    Assert(v.type == jbvArray);
+    (void) JsonbIteratorNext(&it, &v, true);
+
+    if (DatumGetBool(DirectFunctionCall2(numeric_lt, PointerGetDatum(v.val.numeric), PointerGetDatum(minValue->val.numeric)))) {
+        elog(INFO, "Value is not bigger than minimum");
+        return false;
+    }
+
+    exclusiveMinKey.type = jbvString;
+    exclusiveMinText = cstring_to_text("exclusiveMinimum");
+    exclusiveMinKey.val.string.val = VARDATA_ANY(exclusiveMinText);
+    exclusiveMinKey.val.string.len = VARSIZE_ANY_EXHDR(exclusiveMinText);
+
+    exclusiveMinValue = findJsonbValueFromContainer(&schemaJb->root, JB_FOBJECT, &exclusiveMinKey);
+
+    if (exclusiveMinValue == NULL || exclusiveMinValue->type != jbvBool || exclusiveMinValue->val.boolean != true)
+        return true;
+
+    if (DatumGetBool(DirectFunctionCall2(numeric_eq, PointerGetDatum(v.val.numeric), PointerGetDatum(minValue->val.numeric)))) {
+        elog(INFO, "Value is not strictly bigger than minimum");
+        return false;
+    }
+    return true;
+}
+
 static bool _is_jsonb_valid (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema)
 {
     JsonbValue propertyKey;
@@ -299,6 +346,8 @@ static bool _is_jsonb_valid (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_sche
         additionalItemsJb = findJsonbValueFromContainer(&schemaJb->root, JB_FOBJECT, &additionalItemsKeyJb);
         isValid = isValid && check_items(dataJb, propertyValue, additionalItemsJb, root_schema);
     }
+
+    isValid = isValid && validate_min(schemaJb, dataJb);
     return isValid;
 }
 
