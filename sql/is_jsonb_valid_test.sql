@@ -10,6 +10,11 @@ SELECT is_jsonb_valid('{"allOf": [{"type": "number"}, {"type": "integer"}]}', '2
 SELECT is_jsonb_valid('{"oneOf": [{"type": "number"}, {"type": "integer"}]}', '2');
 SELECT is_jsonb_valid('{"minimum": 3}', '2');
 SELECT is_jsonb_valid('{"minimum": 1}', '2');
+select is_jsonb_valid('{"uniqueItems": true}', '[1, 2, 3]');
+select is_jsonb_valid('{"uniqueItems": false}', '[1, 2, 2]');
+select is_jsonb_valid('{"uniqueItems": true}', '[1, 2, 2]');
+select is_jsonb_valid('{"uniqueItems": true}', '[1, {"a": {"b": 1}}, {"a": {"b": 1}}]');
+select is_jsonb_valid('{"uniqueItems": true}', '[1, {"a": {"b": 1}}, {"a": {"b": 2}}]');
 SELECT is_jsonb_valid('{"minimum": 2}', '2');
 SELECT is_jsonb_valid('{"minimum": 2, "exclusiveMinimum": true}', '2');
 SELECT is_jsonb_valid('{"maximum": 3}', '2');

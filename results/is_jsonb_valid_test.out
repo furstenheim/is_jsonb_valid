@@ -76,6 +76,36 @@ SELECT is_jsonb_valid('{"minimum": 1}', '2');
  t
 (1 row)
 
+select is_jsonb_valid('{"uniqueItems": true}', '[1, 2, 3]');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+select is_jsonb_valid('{"uniqueItems": false}', '[1, 2, 2]');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+select is_jsonb_valid('{"uniqueItems": true}', '[1, 2, 2]');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+select is_jsonb_valid('{"uniqueItems": true}', '[1, {"a": {"b": 1}}, {"a": {"b": 1}}]');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+select is_jsonb_valid('{"uniqueItems": true}', '[1, {"a": {"b": 1}}, {"a": {"b": 2}}]');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
 SELECT is_jsonb_valid('{"minimum": 2}', '2');
  is_jsonb_valid 
 ----------------

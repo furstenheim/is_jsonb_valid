@@ -398,6 +398,50 @@ static bool validate_one_of (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_sche
     return countValid == 1;
 }
 
+static bool validate_unique_items (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema)
+{
+        JsonbValue * propertyValue;
+        JsonbIterator *it;
+        JsonbValue v;
+        JsonbIteratorToken r;
+        bool isValid = true;
+        int i = 0;
+        propertyValue = get_jbv_from_key(schemaJb, "uniqueItems");
+        // It cannot be array
+        if (!JB_ROOT_IS_ARRAY(dataJb) || propertyValue == NULL || propertyValue->type != jbvBool || propertyValue->val.boolean == false) {
+            return true;
+        }
+        // Warning this is O(n2)
+        it = JsonbIteratorInit(&dataJb->root);
+        r = JsonbIteratorNext(&it, &v, true);
+        Assert(r == WJB_BEGIN_ARRAY);
+        while (isValid) {
+            JsonbIterator *it2;
+            JsonbValue v2;
+            JsonbIteratorToken r2;
+            Jsonb * subDataJb1;
+            int j = 0;
+            r = JsonbIteratorNext(&it, &v, true);
+            i++;
+            if (r == WJB_END_ARRAY)
+                break;
+            subDataJb1 = JsonbValueToJsonb(&v);
+            it2 = JsonbIteratorInit(&dataJb->root);
+            r2 = JsonbIteratorNext(&it2, &v2, true);
+            Assert(r2 == WJB_BEGIN_ARRAY);
+            while (isValid) {
+                Jsonb * subDataJb2;
+                r2 = JsonbIteratorNext(&it2, &v2, true);
+                j++;
+                if (j >= i)
+                    break;
+                subDataJb2 = JsonbValueToJsonb(&v2);
+                isValid = isValid && compareJsonbContainers(&subDataJb1->root, &subDataJb2->root);
+            }
+        }
+        return isValid;
+}
+
 static bool _is_jsonb_valid (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema)
 {
     JsonbValue propertyKey;
@@ -481,6 +525,7 @@ static bool _is_jsonb_valid (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_sche
     isValid = isValid && validate_any_of(schemaJb, dataJb, root_schema);
     isValid = isValid && validate_all_of(schemaJb, dataJb, root_schema);
     isValid = isValid && validate_one_of(schemaJb, dataJb, root_schema);
+    isValid = isValid && validate_unique_items(schemaJb, dataJb, root_schema);
 
     return isValid;
 }
