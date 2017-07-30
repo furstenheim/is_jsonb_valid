@@ -13,6 +13,58 @@ select is_jsonb_valid('{"minLength": 2}', '"abc"');
 select is_jsonb_valid('{"minLength": 2}', '"a"');
 select is_jsonb_valid('{"maxLength": 2}', '"a"');
 select is_jsonb_valid('{"maxLength": 2}', '"abc"');
+select is_jsonb_valid('{
+                           "dependencies": {
+                               "a": {
+                                   "properties": {
+                                       "x": { "type": "integer" }
+                                   }
+                               }
+                           }
+                       }', '{
+                                "a": "whatever",
+                                "x": 131
+                            }');
+select is_jsonb_valid('{
+                           "dependencies": {
+                               "a": {
+                                   "properties": {
+                                       "x": { "type": "integer" }
+                                   }
+                               }
+                           }
+                       }', '{
+                                "a": true,
+                                "x": 1.1
+                            }');
+select is_jsonb_valid('{
+                           "dependencies": {
+                               "a": "b",
+                               "c": [ "d", "e" ]
+                           }
+                       }', '{
+                               "a": true,
+                               "b": null
+                           }');
+select is_jsonb_valid('{
+                           "dependencies": {
+                               "a": "b",
+                               "c": [ "d", "e" ]
+                           }
+                       }', '{
+                                "c": false,
+                                "d": 31
+                            }');
+select is_jsonb_valid('{
+                           "dependencies": {
+                               "a": "b",
+                               "c": [ "d", "e" ]
+                           }
+                       }', '{
+                                "c": false,
+                                "d": 31,
+                                "e": {"a": 1}
+                            }');
 select is_jsonb_valid('{"maxItems": 5}', '[1, 2, 3, 4]');
 select is_jsonb_valid('{"maxItems": 2}', '[1, 2, 3, 4]');
 select is_jsonb_valid('{"minItems": 1}', '[1, {"bc": 2}, 3, 4]');

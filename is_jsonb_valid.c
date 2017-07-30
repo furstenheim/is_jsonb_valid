@@ -583,6 +583,70 @@ static bool validate_num_items (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_s
     return isValid;
 }
 
+// TODO validate against malformed types
+static bool validate_dependencies (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema)
+{
+    JsonbValue *propertyKey;
+    Jsonb *dependenciesJb;
+    JsonbIterator * it;
+    JsonbValue k, v;
+    JsonbIteratorToken r;
+    bool isValid = true;
+
+    if (!JB_ROOT_IS_OBJECT(dataJb))
+        return true;
+
+    propertyKey = get_jbv_from_key(schemaJb, "dependencies");
+    if (propertyKey == NULL || propertyKey->type != jbvBinary)
+        return true;
+
+    dependenciesJb = JsonbValueToJsonb(propertyKey);
+    it = JsonbIteratorInit(&dependenciesJb->root);
+    r = JsonbIteratorNext(&it, &v, true);
+    Assert(r == WJB_BEGIN_OBJECT);
+    while (isValid) {
+        JsonbValue * dataProperty;
+        r = JsonbIteratorNext(&it, &k, true);
+        if (r == WJB_END_OBJECT)
+            break;
+        r = JsonbIteratorNext(&it, &v, true);
+        dataProperty = findJsonbValueFromContainer(&dataJb->root, JB_FOBJECT, &k);
+        if (dataProperty != NULL) {
+            if (v.type == jbvString) {
+                JsonbValue * dependentProperty;
+                dependentProperty = findJsonbValueFromContainer(&dataJb->root, JB_FOBJECT, &v);
+                isValid = isValid && (dependentProperty != NULL);
+            } else if (v.type == jbvBinary) {
+                Jsonb * dependencyJb;
+                dependencyJb = JsonbValueToJsonb(&v);
+
+                if (JB_ROOT_IS_ARRAY(dependencyJb)) {
+                    JsonbIterator * dependencyIt;
+                    JsonbIteratorToken dependencyR;
+                    JsonbValue dependencyKey;
+
+                    dependencyIt = JsonbIteratorInit(&dependencyJb->root);
+                    dependencyR = JsonbIteratorNext(&dependencyIt, &dependencyKey, true);
+                    Assert(dependencyR == WJB_BEGIN_ARRAY);
+                    while (isValid) {
+                        JsonbValue * dependantProperty;
+                        dependencyR = JsonbIteratorNext(&dependencyIt, &dependencyKey, true);
+                        if (dependencyR == WJB_END_ARRAY)
+                            break;
+                        if (dependencyKey.type == jbvString) {
+                            dependantProperty = findJsonbValueFromContainer(&dataJb->root, JB_FOBJECT, &dependencyKey);
+                            isValid = isValid && (dependantProperty != NULL);
+                        }
+                    }
+                } else if (JB_ROOT_IS_OBJECT(dependencyJb)) {
+                    isValid = isValid && _is_jsonb_valid(dependencyJb, dataJb, root_schema);
+                }
+            }
+        }
+    }
+    return isValid;
+}
+
 static bool _is_jsonb_valid (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema)
 {
     JsonbValue propertyKey;
@@ -676,6 +740,7 @@ static bool _is_jsonb_valid (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_sche
     isValid = isValid && validate_not(schemaJb, dataJb, root_schema);
     isValid = isValid && validate_num_properties(schemaJb, dataJb, root_schema);
     isValid = isValid && validate_num_items(schemaJb, dataJb, root_schema);
+    isValid = isValid && validate_dependencies(schemaJb, dataJb, root_schema);
     return isValid;
 }
 

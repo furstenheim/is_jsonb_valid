@@ -90,6 +90,89 @@ select is_jsonb_valid('{"maxLength": 2}', '"abc"');
  f
 (1 row)
 
+select is_jsonb_valid('{
+                           "dependencies": {
+                               "a": {
+                                   "properties": {
+                                       "x": { "type": "integer" }
+                                   }
+                               }
+                           }
+                       }', '{
+                                "a": "whatever",
+                                "x": 131
+                            }');
+INFO:  There are properties to check
+INFO:  Type is correct
+INFO:  Property is valid
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+select is_jsonb_valid('{
+                           "dependencies": {
+                               "a": {
+                                   "properties": {
+                                       "x": { "type": "integer" }
+                                   }
+                               }
+                           }
+                       }', '{
+                                "a": true,
+                                "x": 1.1
+                            }');
+INFO:  There are properties to check
+INFO:  Type is not correct
+INFO:  Property is not valid
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+select is_jsonb_valid('{
+                           "dependencies": {
+                               "a": "b",
+                               "c": [ "d", "e" ]
+                           }
+                       }', '{
+                               "a": true,
+                               "b": null
+                           }');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+select is_jsonb_valid('{
+                           "dependencies": {
+                               "a": "b",
+                               "c": [ "d", "e" ]
+                           }
+                       }', '{
+                                "c": false,
+                                "d": 31
+                            }');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+select is_jsonb_valid('{
+                           "dependencies": {
+                               "a": "b",
+                               "c": [ "d", "e" ]
+                           }
+                       }', '{
+                                "c": false,
+                                "d": 31,
+                                "e": {"a": 1}
+                            }');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
 select is_jsonb_valid('{"maxItems": 5}', '[1, 2, 3, 4]');
  is_jsonb_valid 
 ----------------
