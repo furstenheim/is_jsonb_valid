@@ -65,6 +65,9 @@ select is_jsonb_valid('{
                                 "d": 31,
                                 "e": {"a": 1}
                             }');
+select is_jsonb_valid('{"pattern": "a"}', '"a"');
+select is_jsonb_valid('{"pattern": "[Ss]mith\\\\b"}', '"My blacksmith produces excellent steel"');
+select is_jsonb_valid('{"pattern": "[Ss]mith\\\\b"}', '"I am no good at smithing, I''m afraid"');
 select is_jsonb_valid('{"maxItems": 5}', '[1, 2, 3, 4]');
 select is_jsonb_valid('{"maxItems": 2}', '[1, 2, 3, 4]');
 select is_jsonb_valid('{"minItems": 1}', '[1, {"bc": 2}, 3, 4]');
