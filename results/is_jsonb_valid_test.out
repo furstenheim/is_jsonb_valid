@@ -90,6 +90,30 @@ select is_jsonb_valid('{"maxLength": 2}', '"abc"');
  f
 (1 row)
 
+select is_jsonb_valid('{"maxItems": 5}', '[1, 2, 3, 4]');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+select is_jsonb_valid('{"maxItems": 2}', '[1, 2, 3, 4]');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+select is_jsonb_valid('{"minItems": 1}', '[1, {"bc": 2}, 3, 4]');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+select is_jsonb_valid('{"minItems": 5}', '[{"a": 1}, 2, 3, 4]');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
 select is_jsonb_valid('{"maxProperties": 4}', '"dab"');
  is_jsonb_valid 
 ----------------

@@ -552,6 +552,37 @@ static bool validate_num_properties (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * r
     return isValid;
 }
 
+static bool validate_num_items (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema)
+{
+    JsonbValue * maxItems, * minItems;
+    JsonbIterator *it;
+    JsonbIteratorToken r;
+    JsonbValue v;
+    bool isValid = true;
+
+    //int numItems = 0;
+
+    if (!JB_ROOT_IS_ARRAY(dataJb))
+        return true;
+
+    minItems = get_jbv_from_key(schemaJb, "minItems");
+    maxItems = get_jbv_from_key(schemaJb, "maxItems");
+
+    if (minItems == NULL && maxItems == NULL)
+        return true;
+
+    it = JsonbIteratorInit(&dataJb->root);
+    r = JsonbIteratorNext(&it, &v, true);
+    Assert(r == WJB_BEGIN_ARRAY);
+    Assert(v.type == jbvArray);
+
+    if (minItems != NULL && minItems->type == jbvNumeric)
+        isValid = isValid && DatumGetBool(DirectFunctionCall2(numeric_ge, DirectFunctionCall1(int4_numeric, v.val.array.nElems), PointerGetDatum(minItems->val.numeric)));
+    if (maxItems != NULL && maxItems->type == jbvNumeric)
+        isValid = isValid && DatumGetBool(DirectFunctionCall2(numeric_le, DirectFunctionCall1(int4_numeric, v.val.array.nElems), PointerGetDatum(maxItems->val.numeric)));
+    return isValid;
+}
+
 static bool _is_jsonb_valid (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema)
 {
     JsonbValue propertyKey;
@@ -644,6 +675,7 @@ static bool _is_jsonb_valid (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_sche
     isValid = isValid && validate_length(schemaJb, dataJb);
     isValid = isValid && validate_not(schemaJb, dataJb, root_schema);
     isValid = isValid && validate_num_properties(schemaJb, dataJb, root_schema);
+    isValid = isValid && validate_num_items(schemaJb, dataJb, root_schema);
     return isValid;
 }
 
