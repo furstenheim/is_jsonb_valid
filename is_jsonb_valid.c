@@ -505,6 +505,22 @@ static bool validate_length (Jsonb * schemaJb, Jsonb * dataJb)
     return isValid;
 }
 
+static bool validate_not (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema)
+{
+    JsonbValue * propertyValue;
+    Jsonb * notJb;
+    propertyValue = get_jbv_from_key(schemaJb, "not");
+    // It cannot be array
+    if (propertyValue == NULL || propertyValue->type != jbvBinary) {
+        return true;
+    }
+    notJb = JsonbValueToJsonb(propertyValue);
+    if (!JB_ROOT_IS_OBJECT(notJb)) {
+        return true;
+    }
+    return !_is_jsonb_valid(notJb, dataJb, root_schema);
+}
+
 static bool _is_jsonb_valid (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema)
 {
     JsonbValue propertyKey;
@@ -595,6 +611,7 @@ static bool _is_jsonb_valid (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_sche
 
     isValid = isValid && validate_enum(schemaJb, dataJb, root_schema);
     isValid = isValid && validate_length(schemaJb, dataJb);
+    isValid = isValid && validate_not(schemaJb, dataJb, root_schema);
     return isValid;
 }
 

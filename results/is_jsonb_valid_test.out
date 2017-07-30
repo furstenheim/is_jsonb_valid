@@ -5,6 +5,20 @@ SELECT is_jsonb_valid('{}', '{}');
  t
 (1 row)
 
+select is_jsonb_valid('{"not": {"type": "object"}}', '1');
+INFO:  Type is not correct
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+select is_jsonb_valid('{"not": {"type": "object"}}', '{}');
+INFO:  Type is correct
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
 SELECT is_jsonb_valid('{"type": "object"}', '{}');
 INFO:  Type is correct
  is_jsonb_valid 
