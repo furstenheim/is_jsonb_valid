@@ -178,6 +178,8 @@ select is_jsonb_valid('{
                                        "f.*o": {"type": "integer"}
                                    }}', '{"foo": 1}');
 INFO:  checking regex
+INFO:  regex matched
+INFO:  Type is correct
  is_jsonb_valid 
 ----------------
  t
@@ -188,10 +190,11 @@ select is_jsonb_valid('{
                                        "f.*o": {"type": "integer"}
                                    }}', '{"foo": "bar", "fooooo": 2}');
 INFO:  checking regex
-INFO:  checking regex
+INFO:  regex matched
+INFO:  Type is not correct
  is_jsonb_valid 
 ----------------
- t
+ f
 (1 row)
 
 select is_jsonb_valid('{"multipleOf": 2}', '4');
@@ -218,16 +221,16 @@ select is_jsonb_valid('{"pattern": "a"}', '"a"');
  t
 (1 row)
 
-select is_jsonb_valid('{"pattern": "[Ss]mith\\\\b"}', '"My blacksmith produces excellent steel"');
+select is_jsonb_valid('{"pattern": "[Ss]mith"}', '"My blacksmith produces excellent steel"');
  is_jsonb_valid 
 ----------------
  t
 (1 row)
 
-select is_jsonb_valid('{"pattern": "[Ss]mith\\\\b"}', '"I am no good at smithing, I''m afraid"');
+select is_jsonb_valid('{"pattern": "[Ss]mith"}', '"I am no good at smitking, I''m afraid"');
  is_jsonb_valid 
 ----------------
- t
+ f
 (1 row)
 
 select is_jsonb_valid('{"maxItems": 5}', '[1, 2, 3, 4]');

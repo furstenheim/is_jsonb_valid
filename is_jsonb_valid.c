@@ -2,6 +2,7 @@
 #include "catalog/pg_type.h"
 #include "fmgr.h"
 #include "utils/builtins.h"
+#include "catalog/pg_collation.h"
 #include "utils/jsonb.h"
 PG_MODULE_MAGIC;
 
@@ -667,9 +668,10 @@ static bool validate_pattern (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_sch
     (void) JsonbIteratorNext(&it, &v, true);
 
 
-    // TODO fix
-    if (false && pattern->type == jbvString) {
-        return DatumGetBool(DirectFunctionCall2(textregexeq, PointerGetDatum(v.val.string.val), PointerGetDatum(pattern->val.string.val)));
+    if (pattern->type == jbvString) {
+        return DatumGetBool(DirectFunctionCall2Coll(textregexeq, DEFAULT_COLLATION_OID,
+            PointerGetDatum(cstring_to_text_with_len(v.val.string.val, v.val.string.len)),
+            PointerGetDatum(cstring_to_text_with_len(pattern->val.string.val, pattern->val.string.len))));
     }
     return isValid;
 }
@@ -711,14 +713,18 @@ static bool validate_pattern_properties (Jsonb * schemaJb, Jsonb * dataJb, Jsonb
         r = JsonbIteratorNext(&it, &subDataKey, true);
         Assert(r == WJB_BEGIN_OBJECT);
         while (isValid) {
+            bool keyMatches;
             r = JsonbIteratorNext(&it, &subDataKey, true);
             if (r == WJB_END_OBJECT)
                 break;
             r = JsonbIteratorNext(&it, &subDataV, true);
             Assert(subDataKey.type == jbvString);
             elog(INFO, "checking regex");
-            // TODO fix
-            if (false && DatumGetBool(DirectFunctionCall2(textregexeq, PointerGetDatum(subDataKey.val.string.val), PointerGetDatum(k.val.string.val)))) {
+            keyMatches = DatumGetBool(DirectFunctionCall2Coll(textregexeq, DEFAULT_COLLATION_OID,
+                PointerGetDatum(cstring_to_text_with_len(subDataKey.val.string.val, subDataKey.val.string.len)),
+                PointerGetDatum(cstring_to_text_with_len(k.val.string.val, k.val.string.len))));
+            elog(INFO, keyMatches ? "regex matched" : "regex did not matched");
+            if (keyMatches) {
                 Jsonb * subDataVJb, * subSchemaJb;
                 subDataVJb = JsonbValueToJsonb(&subDataV);
                 subSchemaJb = JsonbValueToJsonb(&v);
@@ -754,8 +760,8 @@ static bool validate_multiple_of (Jsonb * schemaJb, Jsonb * dataJb)
     dividend = DatumGetNumeric(DirectFunctionCall2(numeric_div, PointerGetDatum(v.val.numeric), PointerGetDatum(multipleOfValue->val.numeric)));
     return DatumGetBool(DirectFunctionCall2(
                                 numeric_eq,
-                                dividend,
-                                DirectFunctionCall1(numeric_floor, dividend)));
+                                PointerGetDatum(dividend),
+                                DirectFunctionCall1(numeric_floor, PointerGetDatum(dividend))));
 }
 
 static bool _is_jsonb_valid (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema)
