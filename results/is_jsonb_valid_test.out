@@ -194,6 +194,24 @@ INFO:  checking regex
  t
 (1 row)
 
+select is_jsonb_valid('{"multipleOf": 2}', '4');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+select is_jsonb_valid('{"multipleOf": 1.5}', '4.5');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+select is_jsonb_valid('{"multipleOf": 4.5}', '2');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
 select is_jsonb_valid('{"pattern": "a"}', '"a"');
  is_jsonb_valid 
 ----------------

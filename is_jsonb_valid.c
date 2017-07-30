@@ -729,6 +729,35 @@ static bool validate_pattern_properties (Jsonb * schemaJb, Jsonb * dataJb, Jsonb
     return isValid;
 }
 
+static bool validate_multiple_of (Jsonb * schemaJb, Jsonb * dataJb)
+{
+    JsonbIterator *it;
+    JsonbValue	v;
+    JsonbValue *multipleOfValue;
+    Numeric dividend;
+    // bool isValid = true;
+    if (!check_type(dataJb, "number", 6))
+        return true;
+
+
+    multipleOfValue = get_jbv_from_key(schemaJb, "multipleOf");
+
+    if (multipleOfValue == NULL || multipleOfValue->type != jbvNumeric)
+        return true;
+
+	it = JsonbIteratorInit(&dataJb->root);
+    // scalar is saved as array of one element
+    (void) JsonbIteratorNext(&it, &v, true);
+    Assert(v.type == jbvArray);
+    (void) JsonbIteratorNext(&it, &v, true);
+
+    dividend = DatumGetNumeric(DirectFunctionCall2(numeric_div, PointerGetDatum(v.val.numeric), PointerGetDatum(multipleOfValue->val.numeric)));
+    return DatumGetBool(DirectFunctionCall2(
+                                numeric_eq,
+                                dividend,
+                                DirectFunctionCall1(numeric_floor, dividend)));
+}
+
 static bool _is_jsonb_valid (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema)
 {
     JsonbValue propertyKey;
@@ -825,6 +854,7 @@ static bool _is_jsonb_valid (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_sche
     isValid = isValid && validate_dependencies(schemaJb, dataJb, root_schema);
     isValid = isValid && validate_pattern(schemaJb, dataJb, root_schema);
     isValid = isValid && validate_pattern_properties(schemaJb, dataJb, root_schema);
+    isValid = isValid && validate_multiple_of(schemaJb, dataJb);
 
     return isValid;
 }

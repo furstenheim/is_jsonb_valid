@@ -74,6 +74,9 @@ select is_jsonb_valid('{
                                        "f.*o": {"type": "integer"}
                                    }}', '{"foo": "bar", "fooooo": 2}');
 
+select is_jsonb_valid('{"multipleOf": 2}', '4');
+select is_jsonb_valid('{"multipleOf": 1.5}', '4.5');
+select is_jsonb_valid('{"multipleOf": 4.5}', '2');
 select is_jsonb_valid('{"pattern": "a"}', '"a"');
 select is_jsonb_valid('{"pattern": "[Ss]mith\\\\b"}', '"My blacksmith produces excellent steel"');
 select is_jsonb_valid('{"pattern": "[Ss]mith\\\\b"}', '"I am no good at smithing, I''m afraid"');
