@@ -65,6 +65,15 @@ select is_jsonb_valid('{
                                 "d": 31,
                                 "e": {"a": 1}
                             }');
+select is_jsonb_valid('{
+                                   "patternProperties": {
+                                       "f.*o": {"type": "integer"}
+                                   }}', '{"foo": 1}');
+select is_jsonb_valid('{
+                                   "patternProperties": {
+                                       "f.*o": {"type": "integer"}
+                                   }}', '{"foo": "bar", "fooooo": 2}');
+
 select is_jsonb_valid('{"pattern": "a"}', '"a"');
 select is_jsonb_valid('{"pattern": "[Ss]mith\\\\b"}', '"My blacksmith produces excellent steel"');
 select is_jsonb_valid('{"pattern": "[Ss]mith\\\\b"}', '"I am no good at smithing, I''m afraid"');

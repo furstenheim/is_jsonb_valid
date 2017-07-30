@@ -656,7 +656,10 @@ static bool validate_pattern (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_sch
     // bool isValid = true;
     if (!check_type(dataJb, "string", 6))
         return true;
-
+    pattern = get_jbv_from_key(schemaJb, "pattern");
+    if (pattern == NULL) {
+        return true;
+    }
 	it = JsonbIteratorInit(&dataJb->root);
     // scalar is saved as array of one element
     (void) JsonbIteratorNext(&it, &v, true);
@@ -664,10 +667,64 @@ static bool validate_pattern (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_sch
     (void) JsonbIteratorNext(&it, &v, true);
 
 
-    pattern = get_jbv_from_key(schemaJb, "pattern");
-
-    if (pattern != NULL && pattern->type == jbvString) {
+    // TODO fix
+    if (false && pattern->type == jbvString) {
         return DatumGetBool(DirectFunctionCall2(textregexeq, PointerGetDatum(v.val.string.val), PointerGetDatum(pattern->val.string.val)));
+    }
+    return isValid;
+}
+
+static bool validate_pattern_properties (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema)
+{
+    JsonbIterator *patternPropertiesIt;
+    JsonbIteratorToken ppR;
+    JsonbValue	k, v;
+    JsonbValue *patternProperties;
+    Jsonb *patternPropertiesJb;
+    bool isValid = true;
+    // bool isValid = true;
+
+    if (!JB_ROOT_IS_OBJECT(dataJb))
+        return true;
+    patternProperties = get_jbv_from_key(schemaJb, "patternProperties");
+
+    if (patternProperties == NULL || patternProperties->type != jbvBinary)
+        return true;
+
+    patternPropertiesJb = JsonbValueToJsonb(patternProperties);
+    if (!JB_ROOT_IS_OBJECT(patternPropertiesJb))
+        return true;
+
+	patternPropertiesIt = JsonbIteratorInit(&patternPropertiesJb->root);
+    ppR = JsonbIteratorNext(&patternPropertiesIt, &v, true);
+    Assert(ppR = WJB_BEGIN_OBJECT);
+    // Warning O(M*N) but we need to iterate over all properties to validate regexp
+    while (isValid) {
+        JsonbIterator * it;
+        JsonbIteratorToken r;
+        JsonbValue subDataV, subDataKey;
+        ppR = JsonbIteratorNext(&patternPropertiesIt, &k, true);
+        if (ppR == WJB_END_OBJECT)
+            break;
+        ppR = JsonbIteratorNext(&patternPropertiesIt, &v, true);
+        it = JsonbIteratorInit(&dataJb->root);
+        r = JsonbIteratorNext(&it, &subDataKey, true);
+        Assert(r == WJB_BEGIN_OBJECT);
+        while (isValid) {
+            r = JsonbIteratorNext(&it, &subDataKey, true);
+            if (r == WJB_END_OBJECT)
+                break;
+            r = JsonbIteratorNext(&it, &subDataV, true);
+            Assert(subDataKey.type == jbvString);
+            elog(INFO, "checking regex");
+            // TODO fix
+            if (false && DatumGetBool(DirectFunctionCall2(textregexeq, PointerGetDatum(subDataKey.val.string.val), PointerGetDatum(k.val.string.val)))) {
+                Jsonb * subDataVJb, * subSchemaJb;
+                subDataVJb = JsonbValueToJsonb(&subDataV);
+                subSchemaJb = JsonbValueToJsonb(&v);
+                isValid = isValid && _is_jsonb_valid(subSchemaJb, subDataVJb, root_schema);
+            }
+        }
     }
     return isValid;
 }
@@ -767,6 +824,7 @@ static bool _is_jsonb_valid (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_sche
     isValid = isValid && validate_num_items(schemaJb, dataJb, root_schema);
     isValid = isValid && validate_dependencies(schemaJb, dataJb, root_schema);
     isValid = isValid && validate_pattern(schemaJb, dataJb, root_schema);
+    isValid = isValid && validate_pattern_properties(schemaJb, dataJb, root_schema);
 
     return isValid;
 }

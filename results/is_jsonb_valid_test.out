@@ -173,15 +173,45 @@ select is_jsonb_valid('{
  t
 (1 row)
 
+select is_jsonb_valid('{
+                                   "patternProperties": {
+                                       "f.*o": {"type": "integer"}
+                                   }}', '{"foo": 1}');
+INFO:  checking regex
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+select is_jsonb_valid('{
+                                   "patternProperties": {
+                                       "f.*o": {"type": "integer"}
+                                   }}', '{"foo": "bar", "fooooo": 2}');
+INFO:  checking regex
+INFO:  checking regex
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
 select is_jsonb_valid('{"pattern": "a"}', '"a"');
-ERROR:  could not determine which collation to use for regular expression
-HINT:  Use the COLLATE clause to set the collation explicitly.
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
 select is_jsonb_valid('{"pattern": "[Ss]mith\\\\b"}', '"My blacksmith produces excellent steel"');
-ERROR:  could not determine which collation to use for regular expression
-HINT:  Use the COLLATE clause to set the collation explicitly.
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
 select is_jsonb_valid('{"pattern": "[Ss]mith\\\\b"}', '"I am no good at smithing, I''m afraid"');
-ERROR:  could not determine which collation to use for regular expression
-HINT:  Use the COLLATE clause to set the collation explicitly.
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
 select is_jsonb_valid('{"maxItems": 5}', '[1, 2, 3, 4]');
  is_jsonb_valid 
 ----------------
