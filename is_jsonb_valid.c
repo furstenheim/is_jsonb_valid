@@ -138,14 +138,20 @@ static bool check_properties (Jsonb * dataJb, JsonbValue * propertyValue, Jsonb 
         return isValid;
 }
 
-static bool check_items (Jsonb * dataJb, JsonbValue * itemsValue, JsonbValue * additionalItemsJbv, Jsonb * root_schema) {
+static bool check_items (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema) {
+    JsonbValue * itemsValue, * additionalItemsJbv;
     bool isValid = true;
     Jsonb * itemsObject;
     JsonbIterator * it;
     JsonbIteratorToken r;
     JsonbValue itemJbv;
     if (!JB_ROOT_IS_ARRAY(dataJb)) return isValid;
+    itemsValue = get_jbv_from_key(schemaJb, "items");
 
+    if (itemsValue == NULL)
+        return true;
+
+    additionalItemsJbv = get_jbv_from_key(schemaJb, "additionalItems");
     itemsObject = JsonbValueToJsonb(itemsValue);
 
     if (JB_ROOT_IS_OBJECT(itemsObject)) {
@@ -822,25 +828,8 @@ static bool _is_jsonb_valid (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_sche
             isValid = isValid && isPropertiesCorrect;
     }
 
-    // items
-    key = cstring_to_text("items");
-    propertyKey.val.string.val = VARDATA_ANY(key);
-    propertyKey.val.string.len = VARSIZE_ANY_EXHDR(key);
 
-    propertyValue = findJsonbValueFromContainer(&schemaJb->root, JB_FOBJECT, &propertyKey);
-
-    if (propertyValue != NULL) {
-        JsonbValue additionalItemsKeyJb;
-        JsonbValue * additionalItemsJb;
-        text* additionalItemsKey;
-        additionalItemsKeyJb.type = jbvString;
-        additionalItemsKey = cstring_to_text("additionalItems");
-        additionalItemsKeyJb.val.string.val = VARDATA_ANY(additionalItemsKey);
-        additionalItemsKeyJb.val.string.len = VARSIZE_ANY_EXHDR(additionalItemsKey);
-
-        additionalItemsJb = findJsonbValueFromContainer(&schemaJb->root, JB_FOBJECT, &additionalItemsKeyJb);
-        isValid = isValid && check_items(dataJb, propertyValue, additionalItemsJb, root_schema);
-    }
+    isValid = isValid && check_items(schemaJb, dataJb, root_schema);
 
     isValid = isValid && validate_min(schemaJb, dataJb);
     isValid = isValid && validate_max(schemaJb, dataJb);
