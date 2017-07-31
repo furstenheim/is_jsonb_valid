@@ -102,40 +102,158 @@ static bool check_type (Jsonb * in, char * type, int typeLen)
     // TODO maybe free iterators
 }
 
-static bool check_properties (Jsonb * dataJb, JsonbValue * propertyValue, Jsonb * root_schema) {
-        bool isValid = true;
-        Jsonb * propertiesObject;
-        JsonbIterator * it;
-        JsonbIteratorToken r;
-        JsonbValue keyJbv, subSchemaJbv;
+static bool check_properties (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema) {
+    JsonbValue * propertiesJbv, * additionalPropertiesJbv, *patternPropertiesJbv;
+    bool isValid = true;
+    Jsonb * propertiesJb, * additionalPropertiesJb, patternPropertiesJb;
+    JsonbIterator * it, *pIt, *patternPropertiesIt;
+    JsonbIteratorToken *r, *pR, ppR;
+    JsonbValue v, pV;
 
-        if (propertyValue->type != jbvBinary)
-            ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Properties must be an object")));
+    if (!JB_ROOT_IS_OBJECT(dataJb))
+        return true;
+    propertiesJbv = get_jbv_from_key(schemaJb, "properties");
+    additionalPropertiesJbv = get_jbv_from_key(schemaJb, "additionalProperties");
+    patternPropertiesJbv = get_jbv_from_key(schemaJb, "patternProperties");
 
-        propertiesObject = JsonbValueToJsonb(propertyValue);
-        Assert(JB_ROOT_IS_OBJECT(propertiesObject));
-        elog(INFO, "There are properties to check");
+    if (propertiesJbv == NULL && additionalProperties == NULL && patternProperties == NULL)
+        return true;
 
-        it = JsonbIteratorInit(&propertiesObject->root);
-        r = JsonbIteratorNext(&it, &keyJbv, true);
+    // Lots of cases here because if patternProperties is not present we can optimize a lot
+    if (patternPropertiesJbv == NULL && propertiesJbv == NULL) {
+        if (additionalPropertiesJbv->type == jbvBool) {
+            if (additionalPropertiesJbv->val.boolean == true) {
+                return true;
+            }
+            Assert(additionalPropertiesJbv->val.boolean == false);
+            it = JsonbIteratorInit(&dataJb->root);
+            r = JsonbIteratorNext(&it, &v, true);
+            Assert(r == WJB_BEGIN_OBJECT);
+            Assert(v.type == jbvObject);
+            return v.val.object.nPairs == 0;
+        } else if (additionalPropertiesJbv->type == jbvBinary) {
+           additionalPropertiesJb = JsonbValueToJsonb(additionalPropertiesJbv);
+           if (!JB_ROOT_IS_OBJECT(additionalPropertiesJb)) {
+               ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("additionalProperties must be object or boolean")));
+           }
+           it = JsonbIteratorInit(&dataJb->root);
+           r = JsonbIteratorNext(&it, &v, true);
+           Assert(r == WJB_BEGIN_OBJECT);
+           while (isValid) {
+                Jsonb * subDataJb;
+                r = JsonbIteratorNext(&it, &v, true);
+                if (r == WJB_END_OBJECT)
+                    break;
+                r = JsonbIteratorNext(&it, &v, true);
+                subDataJb = JsonbValueToJsonb(&v);
+                isValid = isValid && _is_jsonb_valid(additonalPropertiesJb, subDataJb, root_schema);
+           }
+           return isValid;
+        }
+        // Unknown model
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("additionalProperties must be object or boolean")));
+    } else if (patternPropertiesJbv == NULL) {
+        propertiesJb = JsonbValueToJsonb(propertiesJbv);
+        if (!JB_ROOT_IS_OBJECT(propertiesJb))
+            ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("properties must be an object")));
+        if (additionalPropertiesJbv != NULL)
+            additionalPropertiesJb = JsonbValueToJsonb(additionalPropertiesJbv);
+        // Sorted merged join to validate properties so O(#keys)
+        it = JsonbIteratorInit(&dataJb->root);
+        r = JsonbIteratorNext(&it, &v, true);
         Assert(r == WJB_BEGIN_OBJECT);
+        pIt = JsonbIteratorInit(&propertiesJb->root);
+        pR = JsonbIteratorNext(&pIt, &pV, true);
+        Assert(pR == WJB_BEGIN_OBJECT);
 
-        while (true) {
-            Jsonb * subSchemaJb, *subDataJb;
-            JsonbValue *subDataJbv;
-            bool isPropertyValid;
-            r = JsonbIteratorNext(&it, &keyJbv, true);
-            if (r == WJB_END_OBJECT)
-                break;
-            r = JsonbIteratorNext(&it, &subSchemaJbv, true);
-            subDataJbv = findJsonbValueFromContainer(&dataJb->root, JB_FOBJECT, &keyJbv);
-            subDataJb = subDataJbv == NULL ? NULL : JsonbValueToJsonb(subDataJbv);
-            subSchemaJb = JsonbValueToJsonb(&subSchemaJbv);
-            isPropertyValid = _is_jsonb_valid(subSchemaJb, subDataJb, root_schema);
-            elog(INFO, isPropertyValid ? "Property is valid": "Property is not valid");
-            isValid = isValid && isPropertyValid;
+        r = JsonbIteratorNext(&it, &v, true);
+        pR = JsonbIteratorNext(&pIt, &pV, true);
+        while (isValid && !(r == WJB_END_OBJECT && pR == WJB_END_OBJECT)) {
+            Jsonb * subDataJb, * subSchemaJb;
+            // keys are sorted, difference tells us which one we should iterate (0 means they are even)
+            int difference;
+            if (pR == WJB_END_OBJECT) {
+                difference = -1;
+            } else if (r == WJB_END_OBJECT) {
+                difference = 1;
+            } else {
+                difference = lengthCompareJsonbStringValue(&r, &pR);
+            }
+
+            // Additional property
+            if (difference < 0) {
+                // Iterate once more to get the value (we had the key)
+                r = JsonbIteratorNext(&it, &v, true);
+                if (additionalPropertiesJbv != NULL) {
+                    if (additionalPropertiesJbv->type == jbvBool && additionalPropertiesJbv->val.boolean == false) {
+                        isValid = false;
+                    } else if (JB_ROOT_IS_OBJECT(additionalPropertiesJb)) {
+                        subDataJb = JsonbValueToJsonb(&v);
+                        isValid = isValid && _is_jsonb_valid(additionalPropertiesJb, subDataJb, root_schema);
+                    }
+                }
+                r = JsonbIteratorNext(&it, &v, true);
+            } else if (difference > 0) {
+                pR = JsonbIteratorNext(&pIt, &pV, true);
+                // Mainly checking that property is not required
+                subSchemaJb = _is_jsonb_valid(&pV);
+                isValid = isValid && _is_jsonb_valid(subSchemaJb, NULL, root_schema);
+                pR = JsonbIteratorNext(&pIt, &pV, true);
+            } else {
+               r = JsonbIteratorNext(&it, &v, true);
+               pR = JsonbIteratorNext(&pIt, &pV, true);
+               subDataJb = JsonbValueToJsonb(&v);
+               subSchemaJb = _is_jsonb_valid(&pV);
+               isValid = isValid && _is_jsonb_valid(subSchemaJb, subDataJb, root_schema);
+               r = JsonbIteratorNext(&it, &v, true);
+               pR = JsonbIteratorNext(&pIt, &pV, true);
+            }
         }
         return isValid;
+    } else {
+        JsonbValue k, ppK
+        if (additionalPropertiesJbv != NULL)
+            additionalPropertiesJb = JsonbValueToJsonb(additionalPropertiesJbv);
+        if (propertiesJbv != NULL)
+                propertiesJb = JsonbValueToJsonb(propertiesJbv);
+        // This is highly unoptimal. The least O(#keys #patternPropertiesKeys)
+        it = JsonbIteratorInit(&dataJb->root);
+        r = JsonbIteratorNext(&it, &v, true);
+        Assert(r == WJB_BEGIN_OBJECT);
+        // Iterate over all keys of object, then all keys of patternProperties, then check property in properties. If none, then additionalProperties
+        while (isValid) {
+            r = JsonbIteratorNext(&it, &k, true);
+            if (r === WJB_END_OBJECT)
+                break;
+            r = JsonbIteratorNext(&it, &v, true);
+            patternPropertiesIt = JsonbIteratorInit(&patternPropertiesJb->root);
+            ppR = JsonbIteratorNext(&patternPropertiesIt, &ppK, true);
+            Assert(ppR = WJB_BEGIN_OBJECT);
+            while (isValid) {
+                bool keyMatches;
+                ppR = JsonbIteratorNext(&patternPropertiesIt, &ppK, true);
+                if (ppR == WJB_END_OBJECT)
+                    break;
+                ppR = JsonbIteratorNext(&patternPropertiesIt, &ppV, true);
+                keyMatches = DatumGetBool(DirectFunctionCall2Coll(textregexeq, DEFAULT_COLLATION_OID,
+                                PointerGetDatum(cstring_to_text_with_len(k.val.string.val, k.val.string.len)),
+                                PointerGetDatum(cstring_to_text_with_len(ppK.val.string.val, ppK.val.string.len))));
+                elog(INFO, keyMatches ? "regex matched" : "regex did not matched");
+                if (keyMatches) {
+                        Jsonb * subDataVJb, * subSchemaJb;
+                        subDataVJb = JsonbValueToJsonb(&v);
+                        subSchemaJb = JsonbValueToJsonb(&ppV);
+                        isValid = isValid && _is_jsonb_valid(subSchemaJb, subDataVJb, root_schema);
+                } else {
+                    // TODO check properties and additionalProperties
+
+                }
+
+            }
+        }
+
+    }
+
 }
 
 static bool check_items (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema) {
@@ -828,7 +946,7 @@ static bool _is_jsonb_valid (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_sche
             isValid = isValid && isPropertiesCorrect;
     }
 
-
+    isValid = isValid && check_properties(schemaJb, datajb, root_schema);
     isValid = isValid && check_items(schemaJb, dataJb, root_schema);
 
     isValid = isValid && validate_min(schemaJb, dataJb);
