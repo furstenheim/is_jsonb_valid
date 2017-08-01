@@ -131,6 +131,10 @@ SELECT is_jsonb_valid('{"maximum": 1}', '2');
 SELECT is_jsonb_valid('{"maximum": 2}', '2');
 SELECT is_jsonb_valid('{"maximum": 2, "exclusiveMaximum": true}', '2');
 SELECT is_jsonb_valid('{"type": "integer"}', '2');
+SELECT is_jsonb_valid('{"type": ["integer"]}', '2');
+SELECT is_jsonb_valid('{"type": ["string", "integer"]}', '2');
+SELECT is_jsonb_valid('{"type": ["null", "string"]}', '2');
+SELECT is_jsonb_valid('{"type": ["null", {"type": "integer"}]}', '2');
 
 SELECT is_jsonb_valid('{"type": "integer"}', '2.5');
 SELECT is_jsonb_valid('{"properties": {}}', '2.5');

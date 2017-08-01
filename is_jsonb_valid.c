@@ -47,7 +47,7 @@ lengthCompareJsonbStringValue(const void *a, const void *b)
 
 
 // Taken from jsonb_typeof
-static bool check_type (Jsonb * in, char * type, int typeLen)
+static bool is_type_correct(Jsonb * in, char * type, int typeLen)
 {
 	JsonbIterator *it;
 	JsonbValue	v;
@@ -93,6 +93,52 @@ static bool check_type (Jsonb * in, char * type, int typeLen)
 		}
 	}
     // TODO maybe free iterators
+}
+
+static bool check_type (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema)
+{
+    JsonbValue *typeJbv;
+    Jsonb * typeJb;
+
+    typeJbv = get_jbv_from_key(schemaJb, "type");
+
+    if (typeJbv == NULL)
+        return true;
+
+    if (typeJbv->type == jbvString) {
+        bool isValid = is_type_correct(dataJb, typeJbv->val.string.val, typeJbv->val.string.len);
+        return isValid;
+    } else if (typeJbv->type == jbvBinary) {
+        bool isValid = false;
+        JsonbIteratorToken r;
+        JsonbIterator * it;
+        JsonbValue v;
+        typeJb = JsonbValueToJsonb(typeJbv);
+        if (!JB_ROOT_IS_ARRAY(typeJb))
+           ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("type must be string or array")));
+        it = JsonbIteratorInit(&typeJb->root);
+        r = JsonbIteratorNext(&it, &v, true);
+        Assert(r == WJB_BEGIN_ARRAY);
+        while (!isValid) {
+            Jsonb * subSchemaJb;
+            r = JsonbIteratorNext(&it, &v, true);
+            if (r == WJB_END_ARRAY)
+                break;
+            if (v.type == jbvString) {
+                isValid = isValid || is_type_correct(dataJb, v.val.string.val, v.val.string.len);
+            } else if (v.type == jbvBinary) {
+                subSchemaJb = JsonbValueToJsonb(&v);
+                if (!JB_ROOT_IS_OBJECT(subSchemaJb))
+                    ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("type elements must be strings or objects")));
+                isValid = isValid || _is_jsonb_valid(dataJb, subSchemaJb, root_schema);
+            } else {
+                ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("type elements must be strings or objects")));
+            }
+        }
+        return isValid;
+    } else {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("type elements must be strings or objects")));
+    }
 }
 
 static bool check_properties (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema) {
@@ -369,7 +415,7 @@ static bool validate_min (Jsonb * schemaJb, Jsonb * dataJb)
     JsonbValue	v;
     JsonbValue *minValue, *exclusiveMinValue;
     // bool isValid = true;
-    if (!check_type(dataJb, "number", 6))
+    if (!is_type_correct(dataJb, "number", 6))
         return true;
 
     minValue = get_jbv_from_key(schemaJb, "minimum");
@@ -406,7 +452,7 @@ static bool validate_max (Jsonb * schemaJb, Jsonb * dataJb)
     JsonbValue	v;
     JsonbValue *maxValue, *exclusiveMaxValue;
     // bool isValid = true;
-    if (!check_type(dataJb, "number", 6))
+    if (!is_type_correct(dataJb, "number", 6))
         return true;
 
 
@@ -622,7 +668,7 @@ static bool validate_length (Jsonb * schemaJb, Jsonb * dataJb)
     JsonbValue *minLengthValue, *maxLengthValue;
     bool isValid = true;
     // bool isValid = true;
-    if (!check_type(dataJb, "string", 6))
+    if (!is_type_correct(dataJb, "string", 6))
         return true;
 
 	it = JsonbIteratorInit(&dataJb->root);
@@ -795,7 +841,7 @@ static bool validate_pattern (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_sch
     JsonbValue *pattern;
     bool isValid = true;
     // bool isValid = true;
-    if (!check_type(dataJb, "string", 6))
+    if (!is_type_correct(dataJb, "string", 6))
         return true;
     pattern = get_jbv_from_key(schemaJb, "pattern");
     if (pattern == NULL) {
@@ -823,7 +869,7 @@ static bool validate_multiple_of (Jsonb * schemaJb, Jsonb * dataJb)
     JsonbValue *multipleOfValue;
     Numeric dividend;
     // bool isValid = true;
-    if (!check_type(dataJb, "number", 6))
+    if (!is_type_correct(dataJb, "number", 6))
         return true;
 
 
@@ -874,23 +920,7 @@ static bool _is_jsonb_valid (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_sche
     }
     // TODO required as object
 
-    // type
-    key = cstring_to_text("type");
-    propertyKey.val.string.val = VARDATA_ANY(key);
-    propertyKey.val.string.len = VARSIZE_ANY_EXHDR(key);
-
-    propertyValue = findJsonbValueFromContainer(&schemaJb->root, JB_FOBJECT, &propertyKey);
-
-    if (propertyValue != NULL) {
-        bool isTypeCorrect;
-    // TODO accept arrays of types
-        if (propertyValue->type != jbvString)
-            ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Type must be string")));
-        isTypeCorrect = check_type(dataJb, propertyValue->val.string.val, propertyValue->val.string.len);
-        isValid = isValid && isTypeCorrect;
-        elog(INFO, isTypeCorrect ? "Type is correct" : "Type is not correct");
-    }
-
+    isValid = isValid && check_type(schemaJb, dataJb, root_schema);
     isValid = isValid && check_properties(schemaJb, dataJb, root_schema);
     isValid = isValid && check_items(schemaJb, dataJb, root_schema);
 
@@ -960,5 +990,4 @@ static JsonbValue * get_jbv_from_key (Jsonb * in, const char * key)
     propertyValue = findJsonbValueFromContainer(&in->root, JB_FOBJECT, &propertyKey);
     return propertyValue;
 }
-// elog(INFO, "%d", strcmp(propertyValue->val.string.val, "object"));
 
