@@ -73,6 +73,31 @@ select is_jsonb_valid('{
                                    "patternProperties": {
                                        "f.*o": {"type": "integer"}
                                    }}', '{"foo": "bar", "fooooo": 2}');
+select is_jsonb_valid('{
+                                                         "patternProperties": {
+                                                             "f.*o": {"type": "integer"}
+                                                         }, "properties": {"a": {"type": "integer"}}, "additionalProperties": false}', '{"foo": 1, "a": 2.5}');
+select is_jsonb_valid('{
+                                                         "patternProperties": {
+                                                             "f.*o": {"type": "integer"}
+                                                         }, "properties": {"a": {"type": "integer"}}, "additionalProperties": false}', '{"foo": 1, "a": 2}');
+select is_jsonb_valid('{
+                                                         "patternProperties": {
+                                                             "f.*o": {"type": "integer"}
+                                                         }, "properties": {"a": {"type": "integer"}}, "additionalProperties": true}', '{"foo": 1, "a": 2}');
+select is_jsonb_valid('{
+                                                         "patternProperties": {
+                                                             "f.*o": {"type": "integer"}
+                                                         }, "properties": {"a": {"type": "integer"}}, "additionalProperties": true}', '{"foo": 1, "a": 2, "b": false}');
+select is_jsonb_valid('{
+                                                         "patternProperties": {
+                                                             "f.*o": {"type": "integer"}
+                                                         }, "properties": {"a": {"type": "integer"}}, "additionalProperties": {"type": "boolean"}}', '{"foo": 1, "a": 2, "b": false}');
+select is_jsonb_valid('{
+                                                         "patternProperties": {
+                                                             "f.*o": {"type": "integer"}
+                                                         }, "properties": {"a": {"type": "integer"}}, "additionalProperties": {"type": "number"}}', '{"foo": 1, "a": 2, "b": false}');
+
 
 select is_jsonb_valid('{"multipleOf": 2}', '4');
 select is_jsonb_valid('{"multipleOf": 1.5}', '4.5');
@@ -110,6 +135,10 @@ SELECT is_jsonb_valid('{"type": "integer"}', '2');
 SELECT is_jsonb_valid('{"type": "integer"}', '2.5');
 SELECT is_jsonb_valid('{"properties": {}}', '2.5');
 SELECT is_jsonb_valid('{"properties": {"a": {"type": "null"}}}', '{"a": 1}');
+SELECT is_jsonb_valid('{"properties": {"a": {"type": "integer"}}, "additionalProperties": false}', '{"a": 1, "b": 5}');
+SELECT is_jsonb_valid('{"properties": {"a": {"type": "integer"}}, "additionalProperties": true}', '{"a": 1, "b": 5}');
+SELECT is_jsonb_valid('{"properties": {"a": {"type": "integer"}}, "additionalProperties": {"type": "boolean"}}', '{"a": 1, "b": 5}');
+SELECT is_jsonb_valid('{"properties": {"a": {"type": "integer"}}, "additionalProperties": {"type": "number"}}', '{"a": 1, "b": 5}');
 SELECT is_jsonb_valid('{"properties": {"a": {"type": "number"}}}', '{"a": 2.5}');
 SELECT is_jsonb_valid('{"properties": {"a": {"type": "integer"}}}', '{"a": 2}');
 SELECT is_jsonb_valid('{"properties": {"a": {"type": "integer"}}}', '{"a": 2.5}');

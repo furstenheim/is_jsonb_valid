@@ -102,9 +102,7 @@ select is_jsonb_valid('{
                                 "a": "whatever",
                                 "x": 131
                             }');
-INFO:  There are properties to check
 INFO:  Type is correct
-INFO:  Property is valid
  is_jsonb_valid 
 ----------------
  t
@@ -122,9 +120,7 @@ select is_jsonb_valid('{
                                 "a": true,
                                 "x": 1.1
                             }');
-INFO:  There are properties to check
 INFO:  Type is not correct
-INFO:  Property is not valid
  is_jsonb_valid 
 ----------------
  f
@@ -177,7 +173,6 @@ select is_jsonb_valid('{
                                    "patternProperties": {
                                        "f.*o": {"type": "integer"}
                                    }}', '{"foo": 1}');
-INFO:  checking regex
 INFO:  regex matched
 INFO:  Type is correct
  is_jsonb_valid 
@@ -189,8 +184,86 @@ select is_jsonb_valid('{
                                    "patternProperties": {
                                        "f.*o": {"type": "integer"}
                                    }}', '{"foo": "bar", "fooooo": 2}');
-INFO:  checking regex
 INFO:  regex matched
+INFO:  Type is not correct
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+select is_jsonb_valid('{
+                                                         "patternProperties": {
+                                                             "f.*o": {"type": "integer"}
+                                                         }, "properties": {"a": {"type": "integer"}}, "additionalProperties": false}', '{"foo": 1, "a": 2.5}');
+INFO:  regex did not matched
+INFO:  Type is not correct
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+select is_jsonb_valid('{
+                                                         "patternProperties": {
+                                                             "f.*o": {"type": "integer"}
+                                                         }, "properties": {"a": {"type": "integer"}}, "additionalProperties": false}', '{"foo": 1, "a": 2}');
+INFO:  regex did not matched
+INFO:  Type is correct
+INFO:  regex matched
+INFO:  Type is correct
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+select is_jsonb_valid('{
+                                                         "patternProperties": {
+                                                             "f.*o": {"type": "integer"}
+                                                         }, "properties": {"a": {"type": "integer"}}, "additionalProperties": true}', '{"foo": 1, "a": 2}');
+INFO:  regex did not matched
+INFO:  Type is correct
+INFO:  regex matched
+INFO:  Type is correct
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+select is_jsonb_valid('{
+                                                         "patternProperties": {
+                                                             "f.*o": {"type": "integer"}
+                                                         }, "properties": {"a": {"type": "integer"}}, "additionalProperties": true}', '{"foo": 1, "a": 2, "b": false}');
+INFO:  regex did not matched
+INFO:  Type is correct
+INFO:  regex did not matched
+INFO:  regex matched
+INFO:  Type is correct
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+select is_jsonb_valid('{
+                                                         "patternProperties": {
+                                                             "f.*o": {"type": "integer"}
+                                                         }, "properties": {"a": {"type": "integer"}}, "additionalProperties": {"type": "boolean"}}', '{"foo": 1, "a": 2, "b": false}');
+INFO:  regex did not matched
+INFO:  Type is correct
+INFO:  regex did not matched
+INFO:  Type is correct
+INFO:  regex matched
+INFO:  Type is correct
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+select is_jsonb_valid('{
+                                                         "patternProperties": {
+                                                             "f.*o": {"type": "integer"}
+                                                         }, "properties": {"a": {"type": "integer"}}, "additionalProperties": {"type": "number"}}', '{"foo": 1, "a": 2, "b": false}');
+INFO:  regex did not matched
+INFO:  Type is correct
+INFO:  regex did not matched
 INFO:  Type is not correct
  is_jsonb_valid 
 ----------------
@@ -407,43 +480,64 @@ INFO:  Type is not correct
 (1 row)
 
 SELECT is_jsonb_valid('{"properties": {}}', '2.5');
-INFO:  There are properties to check
  is_jsonb_valid 
 ----------------
  t
 (1 row)
 
 SELECT is_jsonb_valid('{"properties": {"a": {"type": "null"}}}', '{"a": 1}');
-INFO:  There are properties to check
 INFO:  Type is not correct
-INFO:  Property is not valid
  is_jsonb_valid 
 ----------------
  f
 (1 row)
 
-SELECT is_jsonb_valid('{"properties": {"a": {"type": "number"}}}', '{"a": 2.5}');
-INFO:  There are properties to check
+SELECT is_jsonb_valid('{"properties": {"a": {"type": "integer"}}, "additionalProperties": false}', '{"a": 1, "b": 5}');
 INFO:  Type is correct
-INFO:  Property is valid
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+SELECT is_jsonb_valid('{"properties": {"a": {"type": "integer"}}, "additionalProperties": true}', '{"a": 1, "b": 5}');
+INFO:  Type is correct
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+SELECT is_jsonb_valid('{"properties": {"a": {"type": "integer"}}, "additionalProperties": {"type": "boolean"}}', '{"a": 1, "b": 5}');
+INFO:  Type is correct
+INFO:  Type is not correct
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+SELECT is_jsonb_valid('{"properties": {"a": {"type": "integer"}}, "additionalProperties": {"type": "number"}}', '{"a": 1, "b": 5}');
+INFO:  Type is correct
+INFO:  Type is correct
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+SELECT is_jsonb_valid('{"properties": {"a": {"type": "number"}}}', '{"a": 2.5}');
+INFO:  Type is correct
  is_jsonb_valid 
 ----------------
  t
 (1 row)
 
 SELECT is_jsonb_valid('{"properties": {"a": {"type": "integer"}}}', '{"a": 2}');
-INFO:  There are properties to check
 INFO:  Type is correct
-INFO:  Property is valid
  is_jsonb_valid 
 ----------------
  t
 (1 row)
 
 SELECT is_jsonb_valid('{"properties": {"a": {"type": "integer"}}}', '{"a": 2.5}');
-INFO:  There are properties to check
 INFO:  Type is not correct
-INFO:  Property is not valid
  is_jsonb_valid 
 ----------------
  f
@@ -451,33 +545,25 @@ INFO:  Property is not valid
 
 --- property is compared with length of key, in this case 4
 SELECT is_jsonb_valid('{"properties": {"a": {"type": "inte"}}}', '{"a": 2}');
-INFO:  There are properties to check
 INFO:  Type is correct
-INFO:  Property is valid
  is_jsonb_valid 
 ----------------
  t
 (1 row)
 
 SELECT is_jsonb_valid('{"properties": {"a": {"required": true}}}', '{}');
-INFO:  There are properties to check
-INFO:  Property is not valid
  is_jsonb_valid 
 ----------------
  f
 (1 row)
 
 SELECT is_jsonb_valid('{"properties": {"a": {"required": false}}}', '{}');
-INFO:  There are properties to check
-INFO:  Property is valid
  is_jsonb_valid 
 ----------------
  t
 (1 row)
 
 SELECT is_jsonb_valid('{"properties": {"a": {"required": true}}}', '{"a": 1}');
-INFO:  There are properties to check
-INFO:  Property is valid
  is_jsonb_valid 
 ----------------
  t
@@ -542,8 +628,6 @@ INFO:  Type is correct
 (1 row)
 
 SELECT is_jsonb_valid('{"properties": {"a": {"type": "integer"}}}', '{"b": 1}');
-INFO:  There are properties to check
-INFO:  Property is valid
  is_jsonb_valid 
 ----------------
  t
