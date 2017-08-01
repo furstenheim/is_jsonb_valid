@@ -455,6 +455,8 @@ SELECT is_jsonb_valid('{"type": ["string", "integer"]}', '2');
  t
 (1 row)
 
+SELECT is_jsonb_valid('{"type": ["string", ["integer", "string"]]}', '2');
+ERROR:  type elements must be strings or objects
 SELECT is_jsonb_valid('{"type": ["null", "string"]}', '2');
  is_jsonb_valid 
 ----------------
@@ -547,6 +549,24 @@ SELECT is_jsonb_valid('{"properties": {"a": {"required": false}}}', '{}');
 (1 row)
 
 SELECT is_jsonb_valid('{"properties": {"a": {"required": true}}}', '{"a": 1}');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+SELECT is_jsonb_valid('{"required": ["a", "b"]}', '{"a": 1}');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+SELECT is_jsonb_valid('{"required": ["a", "b"]}', '{"a": 1, "b": 2}');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+SELECT is_jsonb_valid('{"required": ["a", "b"]}', '1');
  is_jsonb_valid 
 ----------------
  t

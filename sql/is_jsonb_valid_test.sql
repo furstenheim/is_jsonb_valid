@@ -133,6 +133,7 @@ SELECT is_jsonb_valid('{"maximum": 2, "exclusiveMaximum": true}', '2');
 SELECT is_jsonb_valid('{"type": "integer"}', '2');
 SELECT is_jsonb_valid('{"type": ["integer"]}', '2');
 SELECT is_jsonb_valid('{"type": ["string", "integer"]}', '2');
+SELECT is_jsonb_valid('{"type": ["string", ["integer", "string"]]}', '2');
 SELECT is_jsonb_valid('{"type": ["null", "string"]}', '2');
 SELECT is_jsonb_valid('{"type": ["null", {"type": "integer"}]}', '2');
 
@@ -151,6 +152,9 @@ SELECT is_jsonb_valid('{"properties": {"a": {"type": "inte"}}}', '{"a": 2}');
 SELECT is_jsonb_valid('{"properties": {"a": {"required": true}}}', '{}');
 SELECT is_jsonb_valid('{"properties": {"a": {"required": false}}}', '{}');
 SELECT is_jsonb_valid('{"properties": {"a": {"required": true}}}', '{"a": 1}');
+SELECT is_jsonb_valid('{"required": ["a", "b"]}', '{"a": 1}');
+SELECT is_jsonb_valid('{"required": ["a", "b"]}', '{"a": 1, "b": 2}');
+SELECT is_jsonb_valid('{"required": ["a", "b"]}', '1');
 select is_jsonb_valid('{"items": [{"type": "integer"}, {"type": "number"}]}', '[1, 2.5, 3.5]');
 select is_jsonb_valid('{"items": {"type": "integer"}}', '[1, 2, 3]');
 select is_jsonb_valid('{"items": {"type": "integer"}}', '[1, 2, 3.5]');

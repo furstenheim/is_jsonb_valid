@@ -95,6 +95,37 @@ static bool is_type_correct(Jsonb * in, char * type, int typeLen)
     // TODO maybe free iterators
 }
 
+static bool check_required (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema)
+{
+    JsonbValue * requiredValue;
+    Jsonb * requiredJb;
+    JsonbIterator *it;
+    JsonbIteratorToken r;
+    JsonbValue v;
+    bool isValid = true;
+    requiredValue = get_jbv_from_key(schemaJb, "required");
+
+    if (!JB_ROOT_IS_OBJECT(dataJb) || requiredValue == NULL || requiredValue->type != jbvBinary)
+        return true;
+    requiredJb = JsonbValueToJsonb(requiredValue);
+    if (!JB_ROOT_IS_ARRAY(requiredJb))
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Required must be boolean or array")));
+    it = JsonbIteratorInit(&requiredJb->root);
+    r = JsonbIteratorNext(&it, &v, true);
+    Assert(r == WJB_BEGIN_ARRAY);
+    while (isValid) {
+        JsonbValue *propertyJbv;
+        r = JsonbIteratorNext(&it, &v, true);
+        if (r == WJB_END_ARRAY)
+            break;
+        if (v.type != jbvString)
+          ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Required items must be strings")));
+        propertyJbv = findJsonbValueFromContainer(&dataJb->root, JB_FOBJECT, &v);
+        isValid = isValid && (propertyJbv != NULL);
+    }
+    return isValid;
+}
+
 static bool check_type (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema)
 {
     JsonbValue *typeJbv;
@@ -130,7 +161,7 @@ static bool check_type (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema)
                 subSchemaJb = JsonbValueToJsonb(&v);
                 if (!JB_ROOT_IS_OBJECT(subSchemaJb))
                     ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("type elements must be strings or objects")));
-                isValid = isValid || _is_jsonb_valid(dataJb, subSchemaJb, root_schema);
+                isValid = isValid || _is_jsonb_valid(subSchemaJb, dataJb, root_schema);
             } else {
                 ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("type elements must be strings or objects")));
             }
@@ -893,32 +924,23 @@ static bool validate_multiple_of (Jsonb * schemaJb, Jsonb * dataJb)
 
 static bool _is_jsonb_valid (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema)
 {
-    JsonbValue propertyKey;
-    JsonbValue * propertyValue;
-    text* key;
+    JsonbValue * requiredValue;
     bool isValid = true;
-    propertyKey.type = jbvString;
+    requiredValue = get_jbv_from_key(schemaJb, "required");
     if (schemaJb == NULL)
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Schema cannot be undefined")));
-    // TODO probably assert schemaJb is object
-
+    if (!JB_ROOT_IS_OBJECT(schemaJb))
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Schema must be an object")));
     // required
-    key = cstring_to_text("required");
-    propertyKey.val.string.val = VARDATA_ANY(key);
-    propertyKey.val.string.len = VARSIZE_ANY_EXHDR(key);
-
-    propertyValue = findJsonbValueFromContainer(&schemaJb->root, JB_FOBJECT, &propertyKey);
-
-
     if (dataJb == NULL) {
         // required
-        if (propertyValue != NULL && propertyValue->type == jbvBool) {
-               return propertyValue->val.boolean != true;
-
+        if (requiredValue != NULL && requiredValue->type == jbvBool) {
+               return requiredValue->val.boolean != true;
         }
         return true;
     }
-    // TODO required as object
+
+    isValid = isValid && check_required(schemaJb, dataJb, root_schema);
 
     isValid = isValid && check_type(schemaJb, dataJb, root_schema);
     isValid = isValid && check_properties(schemaJb, dataJb, root_schema);
