@@ -31,6 +31,6 @@ SELECT is_jsonb_valid('{"minLength":2}', '1');
 SELECT is_jsonb_valid('{"minLength":2}', '"💩"');
  is_jsonb_valid 
 ----------------
- t
+ f
 (1 row)
 

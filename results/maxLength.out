@@ -31,6 +31,6 @@ SELECT is_jsonb_valid('{"maxLength":2}', '100');
 SELECT is_jsonb_valid('{"maxLength":2}', '"💩💩"');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 

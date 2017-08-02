@@ -787,13 +787,17 @@ static bool validate_length (Jsonb * schemaJb, Jsonb * dataJb)
     minLengthValue = get_jbv_from_key(schemaJb, "minLength");
 
     if (minLengthValue != NULL && minLengthValue->type == jbvNumeric) {
-        isValid = isValid && DatumGetBool(DirectFunctionCall2(numeric_ge, DirectFunctionCall1(int4_numeric, v.val.string.len), PointerGetDatum(minLengthValue->val.numeric)));
+        int length = DatumGetInt32(DirectFunctionCall1(textlen, PointerGetDatum(cstring_to_text_with_len(v.val.string.val, v.val.string.len))));
+        
+        if (DEBUG_IS_JSONB_VALID) elog(INFO, "Length is %d", length);
+        isValid = isValid && DatumGetBool(DirectFunctionCall2(numeric_ge, DirectFunctionCall1(int4_numeric, length), PointerGetDatum(minLengthValue->val.numeric)));
     }
 
     maxLengthValue = get_jbv_from_key(schemaJb, "maxLength");
 
     if (maxLengthValue != NULL && maxLengthValue->type == jbvNumeric) {
-        isValid = isValid && DatumGetBool(DirectFunctionCall2(numeric_le, DirectFunctionCall1(int4_numeric, v.val.string.len), PointerGetDatum(maxLengthValue->val.numeric)));
+        int length = DatumGetInt32(DirectFunctionCall1(textlen, PointerGetDatum(cstring_to_text_with_len(v.val.string.val, v.val.string.len))));
+        isValid = isValid && DatumGetBool(DirectFunctionCall2(numeric_le, DirectFunctionCall1(int4_numeric, length), PointerGetDatum(maxLengthValue->val.numeric)));
     }
     return isValid;
 }
