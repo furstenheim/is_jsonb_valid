@@ -465,6 +465,7 @@ static bool check_items (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema) 
         Jsonb * additionalItemsJb;
         bool additionalItemsBuilt = false;
         bool isItemsObjectFinished = false;
+        if (DEBUG_IS_JSONB_VALID) elog(INFO, "Items is array");
         it = JsonbIteratorInit(&dataJb->root);
         r = JsonbIteratorNext(&it, &itemJbv, true);
 
@@ -479,37 +480,39 @@ static bool check_items (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema) 
             r = JsonbIteratorNext(&it, &itemJbv, true);
             if (!isItemsObjectFinished)
                 schemaR = JsonbIteratorNext(&schemaIt, &schemaJbv, true);
-                if (schemaR == WJB_END_ARRAY)
-                    isItemsObjectFinished = true;
-                if (r == WJB_END_ARRAY) {
+            if (schemaR == WJB_END_ARRAY)
+                isItemsObjectFinished = true;
+            if (r == WJB_END_ARRAY) {
+                break;
+            }
+            if (!isItemsObjectFinished) {
+                Jsonb * subDataJb, * subSchemaJb;
+                subDataJb = JsonbValueToJsonb(&itemJbv);
+                subSchemaJb = JsonbValueToJsonb(&schemaJbv);
+                isItemValid = _is_jsonb_valid(subSchemaJb, subDataJb, root_schema);
+                if (DEBUG_IS_JSONB_VALID) elog(INFO, isItemValid ? "Item is valid" : "Item is not valid");                
+            } else {
+                Jsonb * subDataJb;
+                if (DEBUG_IS_JSONB_VALID) elog(INFO, "Entering else");
+                // No more condition on items
+                if (additionalItemsJbv == NULL) {
+                    break;
+                } else if (additionalItemsJbv->type == jbvBool) {
+                    isValid = additionalItemsJbv->val.boolean;
+                    break;
+                } else if (additionalItemsBuilt) {
+                    subDataJb = JsonbValueToJsonb(&itemJbv);
+                    isItemValid = _is_jsonb_valid(additionalItemsJb, subDataJb, root_schema);
+                } else if (additionalItemsJbv->type == jbvBinary) {
+                    additionalItemsBuilt = true;
+                    additionalItemsJb = JsonbValueToJsonb(additionalItemsJbv);
+                    subDataJb = JsonbValueToJsonb(&itemJbv);
+                    isItemValid = _is_jsonb_valid(additionalItemsJb, subDataJb, root_schema);
+                } else {
                     break;
                 }
-                if (!isItemsObjectFinished) {
-                    Jsonb * subDataJb, * subSchemaJb;
-                    subDataJb = JsonbValueToJsonb(&itemJbv);
-                    subSchemaJb = JsonbValueToJsonb(&schemaJbv);
-                    isItemValid = _is_jsonb_valid(subSchemaJb, subDataJb, root_schema);
-                } else {
-                    Jsonb * subDataJb;
-                    // No more condition on items
-                    if (additionalItemsJbv == NULL) {
-                        break;
-                    } else if (additionalItemsJbv->type == jbvBool) {
-                        isValid = additionalItemsJbv->val.boolean;
-                        break;
-                    } else if (additionalItemsBuilt) {
-                        subDataJb = JsonbValueToJsonb(&itemJbv);
-                        isItemValid = _is_jsonb_valid(additionalItemsJb, subDataJb, root_schema);
-                    } else if (additionalItemsJbv->type == jbvBinary) {
-                        additionalItemsBuilt = true;
-                        additionalItemsJb = JsonbValueToJsonb(additionalItemsJbv);
-                        subDataJb = JsonbValueToJsonb(&itemJbv);
-                        isItemValid = _is_jsonb_valid(additionalItemsJb, subDataJb, root_schema);
-                    } else {
-                        break;
-                    }
-                    isValid = isValid && isItemValid;
-                }
+            }
+            isValid = isValid && isItemValid;
         }
     }
 

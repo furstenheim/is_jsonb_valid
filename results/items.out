@@ -39,7 +39,7 @@ SELECT is_jsonb_valid('{"items":[{"type":"integer"},{"type":"string"}]}', '[1,"f
 SELECT is_jsonb_valid('{"items":[{"type":"integer"},{"type":"string"}]}', '["foo",1]');
  is_jsonb_valid 
 ----------------
- t
+ f
 (1 row)
 
 -- incomplete array of items
