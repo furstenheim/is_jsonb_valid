@@ -4,7 +4,8 @@ const testFolder = './../test/draft4/tests/draft4'
 const ignoredTests = [
   'refRemote.json',
   'ref.json',
-  'optional'
+  'optional',
+  'definitions'
 ]
 main()
 
