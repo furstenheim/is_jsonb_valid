@@ -1,0 +1,87 @@
+-- additionalProperties being false does not allow other properties
+-- no additional properties is valid
+SELECT is_jsonb_valid('{"properties":{"foo":{},"bar":{}},"patternProperties":{"^v":{}},"additionalProperties":false}', '{"foo":1}');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- an additional property is invalid
+SELECT is_jsonb_valid('{"properties":{"foo":{},"bar":{}},"patternProperties":{"^v":{}},"additionalProperties":false}', '{"foo":1,"bar":2,"quux":"boom"}');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- ignores arrays
+SELECT is_jsonb_valid('{"properties":{"foo":{},"bar":{}},"patternProperties":{"^v":{}},"additionalProperties":false}', '[1,2,3]');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- ignores strings
+SELECT is_jsonb_valid('{"properties":{"foo":{},"bar":{}},"patternProperties":{"^v":{}},"additionalProperties":false}', '"foobarbaz"');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- ignores other non-objects
+SELECT is_jsonb_valid('{"properties":{"foo":{},"bar":{}},"patternProperties":{"^v":{}},"additionalProperties":false}', '12');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- patternProperties are not additional properties
+SELECT is_jsonb_valid('{"properties":{"foo":{},"bar":{}},"patternProperties":{"^v":{}},"additionalProperties":false}', '{"foo":1,"vroom":2}');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- additionalProperties allows a schema which should validate
+-- no additional properties is valid
+SELECT is_jsonb_valid('{"properties":{"foo":{},"bar":{}},"additionalProperties":{"type":"boolean"}}', '{"foo":1}');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- an additional valid property is valid
+SELECT is_jsonb_valid('{"properties":{"foo":{},"bar":{}},"additionalProperties":{"type":"boolean"}}', '{"foo":1,"bar":2,"quux":true}');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- an additional invalid property is invalid
+SELECT is_jsonb_valid('{"properties":{"foo":{},"bar":{}},"additionalProperties":{"type":"boolean"}}', '{"foo":1,"bar":2,"quux":12}');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- additionalProperties can exist by itself
+-- an additional valid property is valid
+SELECT is_jsonb_valid('{"additionalProperties":{"type":"boolean"}}', '{"foo":true}');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- an additional invalid property is invalid
+SELECT is_jsonb_valid('{"additionalProperties":{"type":"boolean"}}', '{"foo":1}');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- additionalProperties are allowed by default
+-- additional properties are allowed
+SELECT is_jsonb_valid('{"properties":{"foo":{},"bar":{}}}', '{"foo":1,"bar":2,"quux":true}');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)

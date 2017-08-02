@@ -1,0 +1,66 @@
+-- simple enum validation
+-- one of the enum is valid
+SELECT is_jsonb_valid('{"enum":[1,2,3]}', '1');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- something else is invalid
+SELECT is_jsonb_valid('{"enum":[1,2,3]}', '4');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- heterogeneous enum validation
+-- one of the enum is valid
+SELECT is_jsonb_valid('{"enum":[6,"foo",[],true,{"foo":12}]}', '[]');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- something else is invalid
+SELECT is_jsonb_valid('{"enum":[6,"foo",[],true,{"foo":12}]}', 'null');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- objects are deep compared
+SELECT is_jsonb_valid('{"enum":[6,"foo",[],true,{"foo":12}]}', '{"foo":false}');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- enums in properties
+-- both properties are valid
+SELECT is_jsonb_valid('{"type":"object","properties":{"foo":{"enum":["foo"]},"bar":{"enum":["bar"]}},"required":["bar"]}', '{"foo":"foo","bar":"bar"}');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- missing optional property is valid
+SELECT is_jsonb_valid('{"type":"object","properties":{"foo":{"enum":["foo"]},"bar":{"enum":["bar"]}},"required":["bar"]}', '{"bar":"bar"}');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- missing required property is invalid
+SELECT is_jsonb_valid('{"type":"object","properties":{"foo":{"enum":["foo"]},"bar":{"enum":["bar"]}},"required":["bar"]}', '{"foo":"foo"}');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- missing all properties is invalid
+SELECT is_jsonb_valid('{"type":"object","properties":{"foo":{"enum":["foo"]},"bar":{"enum":["bar"]}},"required":["bar"]}', '{}');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+

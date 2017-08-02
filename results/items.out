@@ -1,0 +1,72 @@
+-- a schema given for items
+-- valid items
+SELECT is_jsonb_valid('{"items":{"type":"integer"}}', '[1,2,3]');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- wrong type of items
+SELECT is_jsonb_valid('{"items":{"type":"integer"}}', '[1,"x"]');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- ignores non-arrays
+SELECT is_jsonb_valid('{"items":{"type":"integer"}}', '{"foo":"bar"}');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- JavaScript pseudo-array is valid
+SELECT is_jsonb_valid('{"items":{"type":"integer"}}', '{"0":"invalid","length":1}');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- an array of schemas for items
+-- correct types
+SELECT is_jsonb_valid('{"items":[{"type":"integer"},{"type":"string"}]}', '[1,"foo"]');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- wrong types
+SELECT is_jsonb_valid('{"items":[{"type":"integer"},{"type":"string"}]}', '["foo",1]');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- incomplete array of items
+SELECT is_jsonb_valid('{"items":[{"type":"integer"},{"type":"string"}]}', '[1]');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- array with additional items
+SELECT is_jsonb_valid('{"items":[{"type":"integer"},{"type":"string"}]}', '[1,"foo",true]');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- empty array
+SELECT is_jsonb_valid('{"items":[{"type":"integer"},{"type":"string"}]}', '[]');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- JavaScript pseudo-array is valid
+SELECT is_jsonb_valid('{"items":[{"type":"integer"},{"type":"string"}]}', '{"0":"invalid","1":"valid","length":2}');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+

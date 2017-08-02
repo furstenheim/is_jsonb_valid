@@ -1,0 +1,30 @@
+-- invalid type for default
+-- valid when property is specified
+SELECT is_jsonb_valid('{"properties":{"foo":{"type":"integer","default":[]}}}', '{"foo":13}');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- still valid when the invalid default is used
+SELECT is_jsonb_valid('{"properties":{"foo":{"type":"integer","default":[]}}}', '{}');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- invalid string value for default
+-- valid when property is specified
+SELECT is_jsonb_valid('{"properties":{"bar":{"type":"string","minLength":4,"default":"bad"}}}', '{"bar":"good"}');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- still valid when the invalid default is used
+SELECT is_jsonb_valid('{"properties":{"bar":{"type":"string","minLength":4,"default":"bad"}}}', '{}');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+

@@ -1,0 +1,68 @@
+-- additionalItems as schema
+-- additional items match schema
+SELECT is_jsonb_valid('{"items":[{}],"additionalItems":{"type":"integer"}}', '[null,2,3,4]');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- additional items do not match schema
+SELECT is_jsonb_valid('{"items":[{}],"additionalItems":{"type":"integer"}}', '[null,2,3,"foo"]');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- items is schema, no additionalItems
+-- all items match schema
+SELECT is_jsonb_valid('{"items":{},"additionalItems":false}', '[1,2,3,4,5]');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- array of items with no additionalItems
+-- fewer number of items present
+SELECT is_jsonb_valid('{"items":[{},{},{}],"additionalItems":false}', '[1,2]');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- equal number of items present
+SELECT is_jsonb_valid('{"items":[{},{},{}],"additionalItems":false}', '[1,2,3]');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- additional items are not permitted
+SELECT is_jsonb_valid('{"items":[{},{},{}],"additionalItems":false}', '[1,2,3,4]');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- additionalItems as false without items
+-- items defaults to empty schema so everything is valid
+SELECT is_jsonb_valid('{"additionalItems":false}', '[1,2,3,4,5]');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- ignores non-arrays
+SELECT is_jsonb_valid('{"additionalItems":false}', '{"foo":"bar"}');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- additionalItems are allowed by default
+-- only the first item is validated
+SELECT is_jsonb_valid('{"items":[{"type":"integer"}]}', '[1,"foo",false]');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+

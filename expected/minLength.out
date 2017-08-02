@@ -1,0 +1,35 @@
+-- minLength validation
+-- longer is valid
+SELECT is_jsonb_valid('{"minLength":2}', '"foo"');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- exact length is valid
+SELECT is_jsonb_valid('{"minLength":2}', '"fo"');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- too short is invalid
+SELECT is_jsonb_valid('{"minLength":2}', '"f"');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- ignores non-strings
+SELECT is_jsonb_valid('{"minLength":2}', '1');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- one supplementary Unicode code point is not long enough
+SELECT is_jsonb_valid('{"minLength":2}', '"💩"');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)

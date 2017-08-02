@@ -1,0 +1,42 @@
+-- maxProperties validation
+-- shorter is valid
+SELECT is_jsonb_valid('{"maxProperties":2}', '{"foo":1}');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- exact length is valid
+SELECT is_jsonb_valid('{"maxProperties":2}', '{"foo":1,"bar":2}');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- too long is invalid
+SELECT is_jsonb_valid('{"maxProperties":2}', '{"foo":1,"bar":2,"baz":3}');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- ignores arrays
+SELECT is_jsonb_valid('{"maxProperties":2}', '[1,2,3]');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- ignores strings
+SELECT is_jsonb_valid('{"maxProperties":2}', '"foobar"');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- ignores other non-objects
+SELECT is_jsonb_valid('{"maxProperties":2}', '12');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)

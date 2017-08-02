@@ -1,0 +1,44 @@
+-- minimum validation
+-- above the minimum is valid
+SELECT is_jsonb_valid('{"minimum":1.1}', '2.6');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- boundary point is valid
+SELECT is_jsonb_valid('{"minimum":1.1}', '1.1');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- below the minimum is invalid
+SELECT is_jsonb_valid('{"minimum":1.1}', '0.6');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- ignores non-numbers
+SELECT is_jsonb_valid('{"minimum":1.1}', '"x"');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- exclusiveMinimum validation
+-- above the minimum is still valid
+SELECT is_jsonb_valid('{"minimum":1.1,"exclusiveMinimum":true}', '1.2');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- boundary point is invalid
+SELECT is_jsonb_valid('{"minimum":1.1,"exclusiveMinimum":true}', '1.1');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+

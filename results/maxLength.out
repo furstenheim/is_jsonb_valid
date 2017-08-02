@@ -1,0 +1,36 @@
+-- maxLength validation
+-- shorter is valid
+SELECT is_jsonb_valid('{"maxLength":2}', '"f"');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- exact length is valid
+SELECT is_jsonb_valid('{"maxLength":2}', '"fo"');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- too long is invalid
+SELECT is_jsonb_valid('{"maxLength":2}', '"foo"');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- ignores non-strings
+SELECT is_jsonb_valid('{"maxLength":2}', '100');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- two supplementary Unicode code points is long enough
+SELECT is_jsonb_valid('{"maxLength":2}', '"💩💩"');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+

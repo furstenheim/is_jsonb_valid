@@ -1,0 +1,22 @@
+{
+  "name": "is-jsonb-valid",
+  "version": "1.0.0",
+  "description": "In progress",
+  "main": "index.js",
+  "scripts": {
+    "create-tests": "node create-tests.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/furstenheim/is_jsonb_valid.git"
+  },
+  "author": "Gabriel Fürstenheim <furstenheim@gmail.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/furstenheim/is_jsonb_valid/issues"
+  },
+  "homepage": "https://github.com/furstenheim/is_jsonb_valid#readme",
+  "dependencies": {
+    "fs-extra": "^4.0.1"
+  }
+}

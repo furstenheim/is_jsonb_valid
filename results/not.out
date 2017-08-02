@@ -1,0 +1,74 @@
+-- not
+-- allowed
+SELECT is_jsonb_valid('{"not":{"type":"integer"}}', '"foo"');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- disallowed
+SELECT is_jsonb_valid('{"not":{"type":"integer"}}', '1');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- not multiple types
+-- valid
+SELECT is_jsonb_valid('{"not":{"type":["integer","boolean"]}}', '"foo"');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- mismatch
+SELECT is_jsonb_valid('{"not":{"type":["integer","boolean"]}}', '1');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- other mismatch
+SELECT is_jsonb_valid('{"not":{"type":["integer","boolean"]}}', 'true');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- not more complex schema
+-- match
+SELECT is_jsonb_valid('{"not":{"type":"object","properties":{"foo":{"type":"string"}}}}', '1');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- other match
+SELECT is_jsonb_valid('{"not":{"type":"object","properties":{"foo":{"type":"string"}}}}', '{"foo":1}');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- mismatch
+SELECT is_jsonb_valid('{"not":{"type":"object","properties":{"foo":{"type":"string"}}}}', '{"foo":"bar"}');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- forbidden property
+-- property present
+SELECT is_jsonb_valid('{"properties":{"foo":{"not":{}}}}', '{"foo":1,"bar":2}');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- property absent
+SELECT is_jsonb_valid('{"properties":{"foo":{"not":{}}}}', '{"bar":1,"baz":2}');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+

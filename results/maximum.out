@@ -1,0 +1,44 @@
+-- maximum validation
+-- below the maximum is valid
+SELECT is_jsonb_valid('{"maximum":3}', '2.6');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- boundary point is valid
+SELECT is_jsonb_valid('{"maximum":3}', '3');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- above the maximum is invalid
+SELECT is_jsonb_valid('{"maximum":3}', '3.5');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- ignores non-numbers
+SELECT is_jsonb_valid('{"maximum":3}', '"x"');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- exclusiveMaximum validation
+-- below the maximum is still valid
+SELECT is_jsonb_valid('{"maximum":3,"exclusiveMaximum":true}', '2.2');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- boundary point is invalid
+SELECT is_jsonb_valid('{"maximum":3,"exclusiveMaximum":true}', '3');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+

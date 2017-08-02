@@ -1,0 +1,50 @@
+-- oneOf
+-- first oneOf valid
+SELECT is_jsonb_valid('{"oneOf":[{"type":"integer"},{"minimum":2}]}', '1');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- second oneOf valid
+SELECT is_jsonb_valid('{"oneOf":[{"type":"integer"},{"minimum":2}]}', '2.5');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- both oneOf valid
+SELECT is_jsonb_valid('{"oneOf":[{"type":"integer"},{"minimum":2}]}', '3');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- neither oneOf valid
+SELECT is_jsonb_valid('{"oneOf":[{"type":"integer"},{"minimum":2}]}', '1.5');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- oneOf with base schema
+-- mismatch base schema
+SELECT is_jsonb_valid('{"type":"string","oneOf":[{"minLength":2},{"maxLength":4}]}', '3');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- one oneOf valid
+SELECT is_jsonb_valid('{"type":"string","oneOf":[{"minLength":2},{"maxLength":4}]}', '"foobar"');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- both oneOf valid
+SELECT is_jsonb_valid('{"type":"string","oneOf":[{"minLength":2},{"maxLength":4}]}', '"foo"');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)

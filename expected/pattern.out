@@ -1,0 +1,29 @@
+-- pattern validation
+-- a matching pattern is valid
+SELECT is_jsonb_valid('{"pattern":"^a*$"}', '"aaa"');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- a non-matching pattern is invalid
+SELECT is_jsonb_valid('{"pattern":"^a*$"}', '"abc"');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- ignores non-strings
+SELECT is_jsonb_valid('{"pattern":"^a*$"}', 'true');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- pattern is not anchored
+-- matches a substring
+SELECT is_jsonb_valid('{"pattern":"a+"}', '"xxaayy"');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)

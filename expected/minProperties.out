@@ -1,0 +1,42 @@
+-- minProperties validation
+-- longer is valid
+SELECT is_jsonb_valid('{"minProperties":1}', '{"foo":1,"bar":2}');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- exact length is valid
+SELECT is_jsonb_valid('{"minProperties":1}', '{"foo":1}');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- too short is invalid
+SELECT is_jsonb_valid('{"minProperties":1}', '{}');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- ignores arrays
+SELECT is_jsonb_valid('{"minProperties":1}', '[]');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- ignores strings
+SELECT is_jsonb_valid('{"minProperties":1}', '""');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- ignores other non-objects
+SELECT is_jsonb_valid('{"minProperties":1}', '12');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
