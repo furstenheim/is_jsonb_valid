@@ -4,6 +4,7 @@
 #include "utils/builtins.h"
 #include "catalog/pg_collation.h"
 #include "utils/jsonb.h"
+#define DEBUG_IS_JSONB_VALID false
 PG_MODULE_MAGIC;
 
 static bool _is_jsonb_valid (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
@@ -394,7 +395,7 @@ static bool check_properties (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_sch
                 keyMatches = DatumGetBool(DirectFunctionCall2Coll(textregexeq, DEFAULT_COLLATION_OID,
                                 PointerGetDatum(cstring_to_text_with_len(k.val.string.val, k.val.string.len)),
                                 PointerGetDatum(cstring_to_text_with_len(ppK.val.string.val, ppK.val.string.len))));
-                elog(INFO, keyMatches ? "regex matched" : "regex did not matched");
+                if (DEBUG_IS_JSONB_VALID) elog(INFO, keyMatches ? "regex matched" : "regex did not matched");
                 if (keyMatches) {
                        Jsonb * subSchemaJb;
                         subSchemaJb = JsonbValueToJsonb(&ppV);
@@ -454,7 +455,7 @@ static bool check_items (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema) 
             }
             subDataJb = JsonbValueToJsonb(&itemJbv);
             isItemValid = _is_jsonb_valid(itemsObject, subDataJb, root_schema);
-            elog(INFO, isItemValid ? "Item is valid" : "Item is not valid");
+            if (DEBUG_IS_JSONB_VALID) elog(INFO, isItemValid ? "Item is valid" : "Item is not valid");
             isValid = isValid && isItemValid;
         }
     } else if (JB_ROOT_IS_ARRAY(itemsObject)) {
@@ -536,7 +537,7 @@ static bool validate_min (Jsonb * schemaJb, Jsonb * dataJb)
     (void) JsonbIteratorNext(&it, &v, true);
 
     if (DatumGetBool(DirectFunctionCall2(numeric_lt, PointerGetDatum(v.val.numeric), PointerGetDatum(minValue->val.numeric)))) {
-        elog(INFO, "Value is not bigger than minimum");
+        if (DEBUG_IS_JSONB_VALID) elog(INFO, "Value is not bigger than minimum");
         return false;
     }
 
@@ -546,7 +547,7 @@ static bool validate_min (Jsonb * schemaJb, Jsonb * dataJb)
         return true;
 
     if (DatumGetBool(DirectFunctionCall2(numeric_eq, PointerGetDatum(v.val.numeric), PointerGetDatum(minValue->val.numeric)))) {
-        elog(INFO, "Value is not strictly bigger than minimum");
+        if (DEBUG_IS_JSONB_VALID) elog(INFO, "Value is not strictly bigger than minimum");
         return false;
     }
     return true;
@@ -574,7 +575,7 @@ static bool validate_max (Jsonb * schemaJb, Jsonb * dataJb)
     (void) JsonbIteratorNext(&it, &v, true);
 
     if (DatumGetBool(DirectFunctionCall2(numeric_gt, PointerGetDatum(v.val.numeric), PointerGetDatum(maxValue->val.numeric)))) {
-        elog(INFO, "Value is not smaller than maximum");
+        if (DEBUG_IS_JSONB_VALID) elog(INFO, "Value is not smaller than maximum");
         return false;
     }
 
@@ -584,7 +585,7 @@ static bool validate_max (Jsonb * schemaJb, Jsonb * dataJb)
         return true;
 
     if (DatumGetBool(DirectFunctionCall2(numeric_eq, PointerGetDatum(v.val.numeric), PointerGetDatum(maxValue->val.numeric)))) {
-        elog(INFO, "Value is not strictly smaller than maximum");
+        if (DEBUG_IS_JSONB_VALID) elog(INFO, "Value is not strictly smaller than maximum");
         return false;
     }
     return true;
@@ -747,7 +748,6 @@ static bool validate_enum (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema
         if (propertyValue == NULL || propertyValue->type != jbvBinary)
         {
             return true;
-            elog(INFO, "Property is not valid");
         }
         enumJb = JsonbValueToJsonb(propertyValue);
         if (!JB_ROOT_IS_ARRAY(enumJb))

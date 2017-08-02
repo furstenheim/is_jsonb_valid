@@ -59,6 +59,12 @@ select is_jsonb_valid('{"enum": [ 1, 2, 3, {"a": 2}]}', '{"a": 2}');
  t
 (1 row)
 
+select is_jsonb_valid('{"enum": [ 1, 2, 3, {"a": 2}]}', '{"a": 1}');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
 select is_jsonb_valid('{"minLength": 2}', '"abc"');
  is_jsonb_valid 
 ----------------
@@ -164,7 +170,6 @@ select is_jsonb_valid('{
                                    "patternProperties": {
                                        "f.*o": {"type": "integer"}
                                    }}', '{"foo": 1}');
-INFO:  regex matched
  is_jsonb_valid 
 ----------------
  t
@@ -174,7 +179,6 @@ select is_jsonb_valid('{
                                    "patternProperties": {
                                        "f.*o": {"type": "integer"}
                                    }}', '{"foo": "bar", "fooooo": 2}');
-INFO:  regex matched
  is_jsonb_valid 
 ----------------
  f
@@ -184,7 +188,6 @@ select is_jsonb_valid('{
                                                          "patternProperties": {
                                                              "f.*o": {"type": "integer"}
                                                          }, "properties": {"a": {"type": "integer"}}, "additionalProperties": false}', '{"foo": 1, "a": 2.5}');
-INFO:  regex did not matched
  is_jsonb_valid 
 ----------------
  f
@@ -194,8 +197,6 @@ select is_jsonb_valid('{
                                                          "patternProperties": {
                                                              "f.*o": {"type": "integer"}
                                                          }, "properties": {"a": {"type": "integer"}}, "additionalProperties": false}', '{"foo": 1, "a": 2}');
-INFO:  regex did not matched
-INFO:  regex matched
  is_jsonb_valid 
 ----------------
  t
@@ -205,8 +206,6 @@ select is_jsonb_valid('{
                                                          "patternProperties": {
                                                              "f.*o": {"type": "integer"}
                                                          }, "properties": {"a": {"type": "integer"}}, "additionalProperties": true}', '{"foo": 1, "a": 2}');
-INFO:  regex did not matched
-INFO:  regex matched
  is_jsonb_valid 
 ----------------
  t
@@ -216,9 +215,6 @@ select is_jsonb_valid('{
                                                          "patternProperties": {
                                                              "f.*o": {"type": "integer"}
                                                          }, "properties": {"a": {"type": "integer"}}, "additionalProperties": true}', '{"foo": 1, "a": 2, "b": false}');
-INFO:  regex did not matched
-INFO:  regex did not matched
-INFO:  regex matched
  is_jsonb_valid 
 ----------------
  t
@@ -228,9 +224,6 @@ select is_jsonb_valid('{
                                                          "patternProperties": {
                                                              "f.*o": {"type": "integer"}
                                                          }, "properties": {"a": {"type": "integer"}}, "additionalProperties": {"type": "boolean"}}', '{"foo": 1, "a": 2, "b": false}');
-INFO:  regex did not matched
-INFO:  regex did not matched
-INFO:  regex matched
  is_jsonb_valid 
 ----------------
  t
@@ -240,8 +233,6 @@ select is_jsonb_valid('{
                                                          "patternProperties": {
                                                              "f.*o": {"type": "integer"}
                                                          }, "properties": {"a": {"type": "integer"}}, "additionalProperties": {"type": "number"}}', '{"foo": 1, "a": 2, "b": false}');
-INFO:  regex did not matched
-INFO:  regex did not matched
  is_jsonb_valid 
 ----------------
  f
@@ -331,12 +322,6 @@ select is_jsonb_valid('{"minProperties": 6}', '{"a": 1, "b": 4, "c": 4, "d": 67,
  f
 (1 row)
 
-select is_jsonb_valid('{"enum": [ 1, 2, 3, {"a": 2}]}', '{"a": 1}');
- is_jsonb_valid 
-----------------
- f
-(1 row)
-
 SELECT is_jsonb_valid('{"anyOf": [{"type": "number"}, {"type": "integer"}]}', '2');
  is_jsonb_valid 
 ----------------
@@ -356,7 +341,6 @@ SELECT is_jsonb_valid('{"oneOf": [{"type": "number"}, {"type": "integer"}]}', '2
 (1 row)
 
 SELECT is_jsonb_valid('{"minimum": 3}', '2');
-INFO:  Value is not bigger than minimum
  is_jsonb_valid 
 ----------------
  f
@@ -405,7 +389,6 @@ SELECT is_jsonb_valid('{"minimum": 2}', '2');
 (1 row)
 
 SELECT is_jsonb_valid('{"minimum": 2, "exclusiveMinimum": true}', '2');
-INFO:  Value is not strictly bigger than minimum
  is_jsonb_valid 
 ----------------
  f
@@ -418,7 +401,6 @@ SELECT is_jsonb_valid('{"maximum": 3}', '2');
 (1 row)
 
 SELECT is_jsonb_valid('{"maximum": 1}', '2');
-INFO:  Value is not smaller than maximum
  is_jsonb_valid 
 ----------------
  f
@@ -431,7 +413,6 @@ SELECT is_jsonb_valid('{"maximum": 2}', '2');
 (1 row)
 
 SELECT is_jsonb_valid('{"maximum": 2, "exclusiveMaximum": true}', '2');
-INFO:  Value is not strictly smaller than maximum
  is_jsonb_valid 
 ----------------
  f
@@ -579,18 +560,12 @@ select is_jsonb_valid('{"items": [{"type": "integer"}, {"type": "number"}]}', '[
 (1 row)
 
 select is_jsonb_valid('{"items": {"type": "integer"}}', '[1, 2, 3]');
-INFO:  Item is valid
-INFO:  Item is valid
-INFO:  Item is valid
  is_jsonb_valid 
 ----------------
  t
 (1 row)
 
 select is_jsonb_valid('{"items": {"type": "integer"}}', '[1, 2, 3.5]');
-INFO:  Item is valid
-INFO:  Item is valid
-INFO:  Item is not valid
  is_jsonb_valid 
 ----------------
  f
