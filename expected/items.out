@@ -3,7 +3,7 @@
 SELECT is_jsonb_valid('{"items":{"type":"integer"}}', '[1,2,3]');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- wrong type of items
@@ -17,14 +17,14 @@ SELECT is_jsonb_valid('{"items":{"type":"integer"}}', '[1,"x"]');
 SELECT is_jsonb_valid('{"items":{"type":"integer"}}', '{"foo":"bar"}');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- JavaScript pseudo-array is valid
 SELECT is_jsonb_valid('{"items":{"type":"integer"}}', '{"0":"invalid","length":1}');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- an array of schemas for items
@@ -32,7 +32,7 @@ SELECT is_jsonb_valid('{"items":{"type":"integer"}}', '{"0":"invalid","length":1
 SELECT is_jsonb_valid('{"items":[{"type":"integer"},{"type":"string"}]}', '[1,"foo"]');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- wrong types
@@ -46,26 +46,27 @@ SELECT is_jsonb_valid('{"items":[{"type":"integer"},{"type":"string"}]}', '["foo
 SELECT is_jsonb_valid('{"items":[{"type":"integer"},{"type":"string"}]}', '[1]');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- array with additional items
 SELECT is_jsonb_valid('{"items":[{"type":"integer"},{"type":"string"}]}', '[1,"foo",true]');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- empty array
 SELECT is_jsonb_valid('{"items":[{"type":"integer"},{"type":"string"}]}', '[]');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- JavaScript pseudo-array is valid
 SELECT is_jsonb_valid('{"items":[{"type":"integer"},{"type":"string"}]}', '{"0":"invalid","1":"valid","length":2}');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
+

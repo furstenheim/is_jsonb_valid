@@ -3,21 +3,21 @@
 SELECT is_jsonb_valid('{"anyOf":[{"type":"integer"},{"minimum":2}]}', '1');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- second anyOf valid
 SELECT is_jsonb_valid('{"anyOf":[{"type":"integer"},{"minimum":2}]}', '2.5');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- both anyOf valid
 SELECT is_jsonb_valid('{"anyOf":[{"type":"integer"},{"minimum":2}]}', '3');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- neither anyOf valid
@@ -39,7 +39,7 @@ SELECT is_jsonb_valid('{"type":"string","anyOf":[{"maxLength":2},{"minLength":4}
 SELECT is_jsonb_valid('{"type":"string","anyOf":[{"maxLength":2},{"minLength":4}]}', '"foobar"');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- both anyOf invalid
@@ -48,3 +48,4 @@ SELECT is_jsonb_valid('{"type":"string","anyOf":[{"maxLength":2},{"minLength":4}
 ----------------
  f
 (1 row)
+

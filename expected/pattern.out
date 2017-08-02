@@ -3,7 +3,7 @@
 SELECT is_jsonb_valid('{"pattern":"^a*$"}', '"aaa"');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- a non-matching pattern is invalid
@@ -17,7 +17,7 @@ SELECT is_jsonb_valid('{"pattern":"^a*$"}', '"abc"');
 SELECT is_jsonb_valid('{"pattern":"^a*$"}', 'true');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- pattern is not anchored
@@ -25,5 +25,6 @@ SELECT is_jsonb_valid('{"pattern":"^a*$"}', 'true');
 SELECT is_jsonb_valid('{"pattern":"a+"}', '"xxaayy"');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
+

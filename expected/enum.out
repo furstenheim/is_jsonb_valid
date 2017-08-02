@@ -3,7 +3,7 @@
 SELECT is_jsonb_valid('{"enum":[1,2,3]}', '1');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- something else is invalid
@@ -18,7 +18,7 @@ SELECT is_jsonb_valid('{"enum":[1,2,3]}', '4');
 SELECT is_jsonb_valid('{"enum":[6,"foo",[],true,{"foo":12}]}', '[]');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- something else is invalid
@@ -40,14 +40,14 @@ SELECT is_jsonb_valid('{"enum":[6,"foo",[],true,{"foo":12}]}', '{"foo":false}');
 SELECT is_jsonb_valid('{"type":"object","properties":{"foo":{"enum":["foo"]},"bar":{"enum":["bar"]}},"required":["bar"]}', '{"foo":"foo","bar":"bar"}');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- missing optional property is valid
 SELECT is_jsonb_valid('{"type":"object","properties":{"foo":{"enum":["foo"]},"bar":{"enum":["bar"]}},"required":["bar"]}', '{"bar":"bar"}');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- missing required property is invalid
@@ -63,3 +63,4 @@ SELECT is_jsonb_valid('{"type":"object","properties":{"foo":{"enum":["foo"]},"ba
 ----------------
  f
 (1 row)
+

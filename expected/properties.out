@@ -3,7 +3,7 @@
 SELECT is_jsonb_valid('{"properties":{"foo":{"type":"integer"},"bar":{"type":"string"}}}', '{"foo":1,"bar":"baz"}');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- one property invalid is invalid
@@ -24,21 +24,21 @@ SELECT is_jsonb_valid('{"properties":{"foo":{"type":"integer"},"bar":{"type":"st
 SELECT is_jsonb_valid('{"properties":{"foo":{"type":"integer"},"bar":{"type":"string"}}}', '{"quux":[]}');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- ignores arrays
 SELECT is_jsonb_valid('{"properties":{"foo":{"type":"integer"},"bar":{"type":"string"}}}', '[]');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- ignores other non-objects
 SELECT is_jsonb_valid('{"properties":{"foo":{"type":"integer"},"bar":{"type":"string"}}}', '12');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- properties, patternProperties, additionalProperties interaction
@@ -46,7 +46,7 @@ SELECT is_jsonb_valid('{"properties":{"foo":{"type":"integer"},"bar":{"type":"st
 SELECT is_jsonb_valid('{"properties":{"foo":{"type":"array","maxItems":3},"bar":{"type":"array"}},"patternProperties":{"f.o":{"minItems":2}},"additionalProperties":{"type":"integer"}}', '{"foo":[1,2]}');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- property invalidates property
@@ -67,7 +67,7 @@ SELECT is_jsonb_valid('{"properties":{"foo":{"type":"array","maxItems":3},"bar":
 SELECT is_jsonb_valid('{"properties":{"foo":{"type":"array","maxItems":3},"bar":{"type":"array"}},"patternProperties":{"f.o":{"minItems":2}},"additionalProperties":{"type":"integer"}}', '{"fxo":[1,2]}');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- patternProperty invalidates nonproperty
@@ -81,14 +81,14 @@ SELECT is_jsonb_valid('{"properties":{"foo":{"type":"array","maxItems":3},"bar":
 SELECT is_jsonb_valid('{"properties":{"foo":{"type":"array","maxItems":3},"bar":{"type":"array"}},"patternProperties":{"f.o":{"minItems":2}},"additionalProperties":{"type":"integer"}}', '{"bar":[]}');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- additionalProperty validates others
 SELECT is_jsonb_valid('{"properties":{"foo":{"type":"array","maxItems":3},"bar":{"type":"array"}},"patternProperties":{"f.o":{"minItems":2}},"additionalProperties":{"type":"integer"}}', '{"quux":3}');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- additionalProperty invalidates others
@@ -97,3 +97,4 @@ SELECT is_jsonb_valid('{"properties":{"foo":{"type":"array","maxItems":3},"bar":
 ----------------
  f
 (1 row)
+

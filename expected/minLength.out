@@ -3,14 +3,14 @@
 SELECT is_jsonb_valid('{"minLength":2}', '"foo"');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- exact length is valid
 SELECT is_jsonb_valid('{"minLength":2}', '"fo"');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- too short is invalid
@@ -24,7 +24,7 @@ SELECT is_jsonb_valid('{"minLength":2}', '"f"');
 SELECT is_jsonb_valid('{"minLength":2}', '1');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- one supplementary Unicode code point is not long enough
@@ -33,3 +33,4 @@ SELECT is_jsonb_valid('{"minLength":2}', '"💩"');
 ----------------
  f
 (1 row)
+

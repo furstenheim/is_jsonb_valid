@@ -3,7 +3,7 @@
 SELECT is_jsonb_valid('{"allOf":[{"properties":{"bar":{"type":"integer"}},"required":["bar"]},{"properties":{"foo":{"type":"string"}},"required":["foo"]}]}', '{"foo":"baz","bar":2}');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- mismatch second
@@ -32,7 +32,7 @@ SELECT is_jsonb_valid('{"allOf":[{"properties":{"bar":{"type":"integer"}},"requi
 SELECT is_jsonb_valid('{"properties":{"bar":{"type":"integer"}},"required":["bar"],"allOf":[{"properties":{"foo":{"type":"string"}},"required":["foo"]},{"properties":{"baz":{"type":"null"}},"required":["baz"]}]}', '{"foo":"quux","bar":2,"baz":null}');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- mismatch base schema
@@ -68,7 +68,7 @@ SELECT is_jsonb_valid('{"properties":{"bar":{"type":"integer"}},"required":["bar
 SELECT is_jsonb_valid('{"allOf":[{"maximum":30},{"minimum":20}]}', '25');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- mismatch one
@@ -77,3 +77,4 @@ SELECT is_jsonb_valid('{"allOf":[{"maximum":30},{"minimum":20}]}', '35');
 ----------------
  f
 (1 row)
+

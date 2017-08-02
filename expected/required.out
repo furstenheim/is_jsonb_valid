@@ -3,7 +3,7 @@
 SELECT is_jsonb_valid('{"properties":{"foo":{},"bar":{}},"required":["foo"]}', '{"foo":1}');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- non-present required property is invalid
@@ -17,21 +17,21 @@ SELECT is_jsonb_valid('{"properties":{"foo":{},"bar":{}},"required":["foo"]}', '
 SELECT is_jsonb_valid('{"properties":{"foo":{},"bar":{}},"required":["foo"]}', '[]');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- ignores strings
 SELECT is_jsonb_valid('{"properties":{"foo":{},"bar":{}},"required":["foo"]}', '""');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- ignores other non-objects
 SELECT is_jsonb_valid('{"properties":{"foo":{},"bar":{}},"required":["foo"]}', '12');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- required default validation
@@ -39,5 +39,6 @@ SELECT is_jsonb_valid('{"properties":{"foo":{},"bar":{}},"required":["foo"]}', '
 SELECT is_jsonb_valid('{"properties":{"foo":{}}}', '{}');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
+

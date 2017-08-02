@@ -3,7 +3,7 @@
 SELECT is_jsonb_valid('{"uniqueItems":true}', '[1,2]');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- non-unique array of integers is invalid
@@ -24,7 +24,7 @@ SELECT is_jsonb_valid('{"uniqueItems":true}', '[1,1,1]');
 SELECT is_jsonb_valid('{"uniqueItems":true}', '[{"foo":"bar"},{"foo":"baz"}]');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- non-unique array of objects is invalid
@@ -38,7 +38,7 @@ SELECT is_jsonb_valid('{"uniqueItems":true}', '[{"foo":"bar"},{"foo":"bar"}]');
 SELECT is_jsonb_valid('{"uniqueItems":true}', '[{"foo":{"bar":{"baz":true}}},{"foo":{"bar":{"baz":false}}}]');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- non-unique array of nested objects is invalid
@@ -52,7 +52,7 @@ SELECT is_jsonb_valid('{"uniqueItems":true}', '[{"foo":{"bar":{"baz":true}}},{"f
 SELECT is_jsonb_valid('{"uniqueItems":true}', '[["foo"],["bar"]]');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- non-unique array of arrays is invalid
@@ -66,21 +66,21 @@ SELECT is_jsonb_valid('{"uniqueItems":true}', '[["foo"],["foo"]]');
 SELECT is_jsonb_valid('{"uniqueItems":true}', '[1,true]');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- 0 and false are unique
 SELECT is_jsonb_valid('{"uniqueItems":true}', '[0,false]');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- unique heterogeneous types are valid
 SELECT is_jsonb_valid('{"uniqueItems":true}', '[{},[1],true,null,1]');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- non-unique heterogeneous types are invalid
@@ -89,3 +89,4 @@ SELECT is_jsonb_valid('{"uniqueItems":true}', '[{},[1],true,null,{},1]');
 ----------------
  f
 (1 row)
+

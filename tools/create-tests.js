@@ -26,11 +26,12 @@ async function main () {
           resultLines.push(`SELECT is_jsonb_valid('${JSON.stringify(testCase.schema)}', '${JSON.stringify(test.data)}');`)
           resultLines.push(' is_jsonb_valid ')
           resultLines.push('----------------')
-          resultLines.push(testCase.valid ? ' t' : ' f')
+          resultLines.push(test.valid ? ' t' : ' f')
           resultLines.push('(1 row)')
           resultLines.push('')
         }
       }
+      resultLines.push('')
       const addedFile = file.match('[a-zA-Z]+')[0]
       addedFiles.push(addedFile)
       await fs.writeFile(path.join('../sql', addedFile + '.sql'), testLines.join('\n'))

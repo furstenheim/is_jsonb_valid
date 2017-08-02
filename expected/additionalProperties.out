@@ -3,7 +3,7 @@
 SELECT is_jsonb_valid('{"properties":{"foo":{},"bar":{}},"patternProperties":{"^v":{}},"additionalProperties":false}', '{"foo":1}');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- an additional property is invalid
@@ -17,28 +17,28 @@ SELECT is_jsonb_valid('{"properties":{"foo":{},"bar":{}},"patternProperties":{"^
 SELECT is_jsonb_valid('{"properties":{"foo":{},"bar":{}},"patternProperties":{"^v":{}},"additionalProperties":false}', '[1,2,3]');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- ignores strings
 SELECT is_jsonb_valid('{"properties":{"foo":{},"bar":{}},"patternProperties":{"^v":{}},"additionalProperties":false}', '"foobarbaz"');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- ignores other non-objects
 SELECT is_jsonb_valid('{"properties":{"foo":{},"bar":{}},"patternProperties":{"^v":{}},"additionalProperties":false}', '12');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- patternProperties are not additional properties
 SELECT is_jsonb_valid('{"properties":{"foo":{},"bar":{}},"patternProperties":{"^v":{}},"additionalProperties":false}', '{"foo":1,"vroom":2}');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- additionalProperties allows a schema which should validate
@@ -46,14 +46,14 @@ SELECT is_jsonb_valid('{"properties":{"foo":{},"bar":{}},"patternProperties":{"^
 SELECT is_jsonb_valid('{"properties":{"foo":{},"bar":{}},"additionalProperties":{"type":"boolean"}}', '{"foo":1}');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- an additional valid property is valid
 SELECT is_jsonb_valid('{"properties":{"foo":{},"bar":{}},"additionalProperties":{"type":"boolean"}}', '{"foo":1,"bar":2,"quux":true}');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- an additional invalid property is invalid
@@ -68,7 +68,7 @@ SELECT is_jsonb_valid('{"properties":{"foo":{},"bar":{}},"additionalProperties":
 SELECT is_jsonb_valid('{"additionalProperties":{"type":"boolean"}}', '{"foo":true}');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- an additional invalid property is invalid
@@ -83,5 +83,6 @@ SELECT is_jsonb_valid('{"additionalProperties":{"type":"boolean"}}', '{"foo":1}'
 SELECT is_jsonb_valid('{"properties":{"foo":{},"bar":{}}}', '{"foo":1,"bar":2,"quux":true}');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
+

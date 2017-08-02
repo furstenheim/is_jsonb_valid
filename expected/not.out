@@ -3,7 +3,7 @@
 SELECT is_jsonb_valid('{"not":{"type":"integer"}}', '"foo"');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- disallowed
@@ -18,7 +18,7 @@ SELECT is_jsonb_valid('{"not":{"type":"integer"}}', '1');
 SELECT is_jsonb_valid('{"not":{"type":["integer","boolean"]}}', '"foo"');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- mismatch
@@ -40,14 +40,14 @@ SELECT is_jsonb_valid('{"not":{"type":["integer","boolean"]}}', 'true');
 SELECT is_jsonb_valid('{"not":{"type":"object","properties":{"foo":{"type":"string"}}}}', '1');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- other match
 SELECT is_jsonb_valid('{"not":{"type":"object","properties":{"foo":{"type":"string"}}}}', '{"foo":1}');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- mismatch
@@ -69,5 +69,6 @@ SELECT is_jsonb_valid('{"properties":{"foo":{"not":{}}}}', '{"foo":1,"bar":2}');
 SELECT is_jsonb_valid('{"properties":{"foo":{"not":{}}}}', '{"bar":1,"baz":2}');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
+

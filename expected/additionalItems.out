@@ -3,7 +3,7 @@
 SELECT is_jsonb_valid('{"items":[{}],"additionalItems":{"type":"integer"}}', '[null,2,3,4]');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- additional items do not match schema
@@ -18,7 +18,7 @@ SELECT is_jsonb_valid('{"items":[{}],"additionalItems":{"type":"integer"}}', '[n
 SELECT is_jsonb_valid('{"items":{},"additionalItems":false}', '[1,2,3,4,5]');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- array of items with no additionalItems
@@ -26,14 +26,14 @@ SELECT is_jsonb_valid('{"items":{},"additionalItems":false}', '[1,2,3,4,5]');
 SELECT is_jsonb_valid('{"items":[{},{},{}],"additionalItems":false}', '[1,2]');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- equal number of items present
 SELECT is_jsonb_valid('{"items":[{},{},{}],"additionalItems":false}', '[1,2,3]');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- additional items are not permitted
@@ -48,14 +48,14 @@ SELECT is_jsonb_valid('{"items":[{},{},{}],"additionalItems":false}', '[1,2,3,4]
 SELECT is_jsonb_valid('{"additionalItems":false}', '[1,2,3,4,5]');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- ignores non-arrays
 SELECT is_jsonb_valid('{"additionalItems":false}', '{"foo":"bar"}');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- additionalItems are allowed by default
@@ -63,5 +63,6 @@ SELECT is_jsonb_valid('{"additionalItems":false}', '{"foo":"bar"}');
 SELECT is_jsonb_valid('{"items":[{"type":"integer"}]}', '[1,"foo",false]');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
+

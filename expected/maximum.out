@@ -3,14 +3,14 @@
 SELECT is_jsonb_valid('{"maximum":3}', '2.6');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- boundary point is valid
 SELECT is_jsonb_valid('{"maximum":3}', '3');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- above the maximum is invalid
@@ -24,7 +24,7 @@ SELECT is_jsonb_valid('{"maximum":3}', '3.5');
 SELECT is_jsonb_valid('{"maximum":3}', '"x"');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- exclusiveMaximum validation
@@ -32,7 +32,7 @@ SELECT is_jsonb_valid('{"maximum":3}', '"x"');
 SELECT is_jsonb_valid('{"maximum":3,"exclusiveMaximum":true}', '2.2');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- boundary point is invalid
@@ -41,3 +41,4 @@ SELECT is_jsonb_valid('{"maximum":3,"exclusiveMaximum":true}', '3');
 ----------------
  f
 (1 row)
+

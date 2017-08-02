@@ -3,7 +3,7 @@
 SELECT is_jsonb_valid('{"type":"integer"}', '1');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- a float is not an integer
@@ -60,14 +60,14 @@ SELECT is_jsonb_valid('{"type":"integer"}', 'null');
 SELECT is_jsonb_valid('{"type":"number"}', '1');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- a float is a number
 SELECT is_jsonb_valid('{"type":"number"}', '1.1');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- a string is not a number
@@ -131,14 +131,14 @@ SELECT is_jsonb_valid('{"type":"string"}', '1.1');
 SELECT is_jsonb_valid('{"type":"string"}', '"foo"');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- a string is still a string, even if it looks like a number
 SELECT is_jsonb_valid('{"type":"string"}', '"1"');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- an object is not a string
@@ -195,7 +195,7 @@ SELECT is_jsonb_valid('{"type":"object"}', '"foo"');
 SELECT is_jsonb_valid('{"type":"object"}', '{}');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- an array is not an object
@@ -252,7 +252,7 @@ SELECT is_jsonb_valid('{"type":"array"}', '{}');
 SELECT is_jsonb_valid('{"type":"array"}', '[]');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- a boolean is not an array
@@ -309,7 +309,7 @@ SELECT is_jsonb_valid('{"type":"boolean"}', '[]');
 SELECT is_jsonb_valid('{"type":"boolean"}', 'true');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- null is not a boolean
@@ -366,7 +366,7 @@ SELECT is_jsonb_valid('{"type":"null"}', 'true');
 SELECT is_jsonb_valid('{"type":"null"}', 'null');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- multiple types can be specified in an array
@@ -374,14 +374,14 @@ SELECT is_jsonb_valid('{"type":"null"}', 'null');
 SELECT is_jsonb_valid('{"type":["integer","string"]}', '1');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- a string is valid
 SELECT is_jsonb_valid('{"type":["integer","string"]}', '"foo"');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- a float is invalid
@@ -418,3 +418,4 @@ SELECT is_jsonb_valid('{"type":["integer","string"]}', 'null');
 ----------------
  f
 (1 row)
+

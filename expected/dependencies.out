@@ -3,21 +3,21 @@
 SELECT is_jsonb_valid('{"dependencies":{"bar":["foo"]}}', '{}');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- nondependant
 SELECT is_jsonb_valid('{"dependencies":{"bar":["foo"]}}', '{"foo":1}');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- with dependency
 SELECT is_jsonb_valid('{"dependencies":{"bar":["foo"]}}', '{"foo":1,"bar":2}');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- missing dependency
@@ -31,21 +31,21 @@ SELECT is_jsonb_valid('{"dependencies":{"bar":["foo"]}}', '{"bar":2}');
 SELECT is_jsonb_valid('{"dependencies":{"bar":["foo"]}}', '["bar"]');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- ignores strings
 SELECT is_jsonb_valid('{"dependencies":{"bar":["foo"]}}', '"foobar"');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- ignores other non-objects
 SELECT is_jsonb_valid('{"dependencies":{"bar":["foo"]}}', '12');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- multiple dependencies
@@ -53,21 +53,21 @@ SELECT is_jsonb_valid('{"dependencies":{"bar":["foo"]}}', '12');
 SELECT is_jsonb_valid('{"dependencies":{"quux":["foo","bar"]}}', '{}');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- nondependants
 SELECT is_jsonb_valid('{"dependencies":{"quux":["foo","bar"]}}', '{"foo":1,"bar":2}');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- with dependencies
 SELECT is_jsonb_valid('{"dependencies":{"quux":["foo","bar"]}}', '{"foo":1,"bar":2,"quux":3}');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- missing dependency
@@ -96,14 +96,14 @@ SELECT is_jsonb_valid('{"dependencies":{"quux":["foo","bar"]}}', '{"quux":1}');
 SELECT is_jsonb_valid('{"dependencies":{"bar":{"properties":{"foo":{"type":"integer"},"bar":{"type":"integer"}}}}}', '{"foo":1,"bar":2}');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- no dependency
 SELECT is_jsonb_valid('{"dependencies":{"bar":{"properties":{"foo":{"type":"integer"},"bar":{"type":"integer"}}}}}', '{"foo":"quux"}');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- wrong type
@@ -126,3 +126,4 @@ SELECT is_jsonb_valid('{"dependencies":{"bar":{"properties":{"foo":{"type":"inte
 ----------------
  f
 (1 row)
+

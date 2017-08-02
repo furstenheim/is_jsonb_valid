@@ -3,14 +3,14 @@
 SELECT is_jsonb_valid('{"maxItems":2}', '[1]');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- exact length is valid
 SELECT is_jsonb_valid('{"maxItems":2}', '[1,2]');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
 
 -- too long is invalid
@@ -24,5 +24,6 @@ SELECT is_jsonb_valid('{"maxItems":2}', '[1,2,3]');
 SELECT is_jsonb_valid('{"maxItems":2}', '"foobar"');
  is_jsonb_valid 
 ----------------
- f
+ t
 (1 row)
+
