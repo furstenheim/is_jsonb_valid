@@ -1,0 +1,111 @@
+-- root pointer ref
+-- match
+SELECT is_jsonb_valid('{"properties":{"foo":{"$ref":"#"}},"additionalProperties":false}', '{"foo":false}');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- recursive match
+SELECT is_jsonb_valid('{"properties":{"foo":{"$ref":"#"}},"additionalProperties":false}', '{"foo":{"foo":false}}');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- mismatch
+SELECT is_jsonb_valid('{"properties":{"foo":{"$ref":"#"}},"additionalProperties":false}', '{"bar":false}');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- recursive mismatch
+SELECT is_jsonb_valid('{"properties":{"foo":{"$ref":"#"}},"additionalProperties":false}', '{"foo":{"bar":false}}');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- relative pointer ref to object
+-- match
+SELECT is_jsonb_valid('{"properties":{"foo":{"type":"integer"},"bar":{"$ref":"#/properties/foo"}}}', '{"bar":3}');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- mismatch
+SELECT is_jsonb_valid('{"properties":{"foo":{"type":"integer"},"bar":{"$ref":"#/properties/foo"}}}', '{"bar":true}');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- relative pointer ref to array
+-- match array
+SELECT is_jsonb_valid('{"items":[{"type":"integer"},{"$ref":"#/items/0"}]}', '[1,2]');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- mismatch array
+SELECT is_jsonb_valid('{"items":[{"type":"integer"},{"$ref":"#/items/0"}]}', '[1,"foo"]');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- nested refs
+-- nested ref valid
+SELECT is_jsonb_valid('{"definitions":{"a":{"type":"integer"},"b":{"$ref":"#/definitions/a"},"c":{"$ref":"#/definitions/b"}},"$ref":"#/definitions/c"}', '5');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- nested ref invalid
+SELECT is_jsonb_valid('{"definitions":{"a":{"type":"integer"},"b":{"$ref":"#/definitions/a"},"c":{"$ref":"#/definitions/b"}},"$ref":"#/definitions/c"}', '"a"');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- ref overrides any sibling keywords
+-- ref valid
+SELECT is_jsonb_valid('{"definitions":{"reffed":{"type":"array"}},"properties":{"foo":{"$ref":"#/definitions/reffed","maxItems":2}}}', '{"foo":[]}');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- ref valid, maxItems ignored
+SELECT is_jsonb_valid('{"definitions":{"reffed":{"type":"array"}},"properties":{"foo":{"$ref":"#/definitions/reffed","maxItems":2}}}', '{"foo":[1,2,3]}');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- ref invalid
+SELECT is_jsonb_valid('{"definitions":{"reffed":{"type":"array"}},"properties":{"foo":{"$ref":"#/definitions/reffed","maxItems":2}}}', '{"foo":"string"}');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- property named $ref that is not a reference
+-- property named $ref valid
+SELECT is_jsonb_valid('{"properties":{"$ref":{"type":"string"}}}', '{"$ref":"a"}');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- property named $ref invalid
+SELECT is_jsonb_valid('{"properties":{"$ref":{"type":"string"}}}', '{"$ref":2}');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+

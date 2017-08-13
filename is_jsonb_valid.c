@@ -1,10 +1,16 @@
 #include "postgres.h"
 #include "catalog/pg_type.h"
 #include "fmgr.h"
+#include <limits.h>
 #include "utils/builtins.h"
 #include "catalog/pg_collation.h"
 #include "utils/jsonb.h"
 #define DEBUG_IS_JSONB_VALID false
+
+// Not very nice, but it is only defined internally
+#define JsonContainerIsArray(jc)	(((jc)->header & JB_FARRAY) != 0)
+#define JsonContainerSize(jc)		((jc)->header & JB_CMASK)
+
 PG_MODULE_MAGIC;
 
 static bool _is_jsonb_valid (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
@@ -18,6 +24,7 @@ static bool validate_any_of (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_sche
 static bool validate_all_of (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
 static bool validate_one_of (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
 static bool validate_unique_items (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
+static bool validate_ref (JsonbValue * refJbv, Jsonb * dataJb, Jsonb * root_schema);
 static bool validate_enum (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
 static bool validate_length (Jsonb * schemaJb, Jsonb * dataJb);
 static bool validate_not (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
@@ -41,13 +48,20 @@ is_jsonb_valid(PG_FUNCTION_ARGS)
 
 static bool _is_jsonb_valid (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema)
 {
-    JsonbValue * requiredValue;
+    JsonbValue * requiredValue, * refJbv;
     bool isValid = true;
-    requiredValue = get_jbv_from_key(schemaJb, "required");
     if (schemaJb == NULL)
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Schema cannot be undefined")));
     if (!JB_ROOT_IS_OBJECT(schemaJb))
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Schema must be an object")));
+    
+    requiredValue = get_jbv_from_key(schemaJb, "required");    
+    refJbv = get_jbv_from_key(schemaJb, "$ref");
+    // $ref overrides rest of properties
+    if (refJbv != NULL) {
+        return validate_ref(refJbv, dataJb, root_schema);
+    }
+    
     // If jb is null then we still have to check for required
     if (dataJb == NULL) {
         if (requiredValue != NULL && requiredValue->type == jbvBool) {
@@ -55,6 +69,8 @@ static bool _is_jsonb_valid (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_sche
         }
         return true;
     }
+    
+    
 
     isValid = isValid && check_required(schemaJb, dataJb, root_schema);
 
@@ -68,9 +84,6 @@ static bool _is_jsonb_valid (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_sche
     isValid = isValid && validate_all_of(schemaJb, dataJb, root_schema);
     isValid = isValid && validate_one_of(schemaJb, dataJb, root_schema);
     isValid = isValid && validate_unique_items(schemaJb, dataJb, root_schema);
-
-    // TODO ref
-
     isValid = isValid && validate_enum(schemaJb, dataJb, root_schema);
     isValid = isValid && validate_length(schemaJb, dataJb);
     isValid = isValid && validate_not(schemaJb, dataJb, root_schema);
@@ -78,9 +91,7 @@ static bool _is_jsonb_valid (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_sche
     isValid = isValid && validate_num_items(schemaJb, dataJb, root_schema);
     isValid = isValid && validate_dependencies(schemaJb, dataJb, root_schema);
     isValid = isValid && validate_pattern(schemaJb, dataJb, root_schema);
-    //isValid = isValid && validate_pattern_properties(schemaJb, dataJb, root_schema);
     isValid = isValid && validate_multiple_of(schemaJb, dataJb);
-
     return isValid;
 }
 
@@ -738,6 +749,132 @@ static bool validate_unique_items (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * roo
         }
         return isValid;
 }
+
+static bool validate_ref (JsonbValue * refJbv, Jsonb * dataJb, Jsonb * root_schema)
+{
+    ArrayType *path;
+    Datum *pathtext;
+    JsonbValue * refSchemaJbv;
+    Jsonb * refSchemaJb;
+    bool *pathnulls;
+    bool have_object = true, have_array = false;
+    int npath;
+    int i;
+    JsonbContainer * container;
+    Assert(refJbv != NULL);
+    if (refJbv->type != jbvString)
+    {
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("$ref must be a string")));
+    }
+    
+    path = DatumGetArrayTypeP(DirectFunctionCall2Coll(
+        regexp_split_to_array,
+        DEFAULT_COLLATION_OID,
+        PointerGetDatum(cstring_to_text_with_len(refJbv->val.string.val, refJbv->val.string.len)),
+        PointerGetDatum(cstring_to_text("/"))));
+    /*
+    * Code from here is very similar to get_jsonb_path_all
+    */
+    deconstruct_array(path, TEXTOID, -1, false, 'i',
+                            &pathtext, &pathnulls, &npath);
+    if (npath <= 0) 
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("$ref must not be an empty string"))); // Not sure if npath = 0 can actually happen. Even for empty strings
+    // We only support refs anchored at root
+    if (!DatumGetBool(DirectFunctionCall2(texteq, PointerGetDatum(pathtext[0]), PointerGetDatum(cstring_to_text("#")))))
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("$ref must be anchored at root")));
+    Assert(JB_ROOT_IS_OBJECT(root_schema));
+    container = &root_schema->root;
+    
+    for (i = 1; i < npath; i++) {
+        text * route;
+       
+        // TODO textregexreplace_noopt replaces only first instance. We should replace all instances
+        route = DatumGetTextP(DirectFunctionCall3Coll(
+            textregexreplace_noopt,
+            DEFAULT_COLLATION_OID,
+            DirectFunctionCall3Coll(
+                textregexreplace_noopt, 
+                DEFAULT_COLLATION_OID,
+                PointerGetDatum(pathtext[i]), 
+                CStringGetTextDatum("~1"), 
+                CStringGetTextDatum("/")),
+            CStringGetTextDatum("~0"), 
+            CStringGetTextDatum("~")));
+        if (have_object) {
+            JsonbValue k;
+            k.type = jbvString;
+            k.val.string.val = VARDATA(route);
+            k.val.string.len = VARSIZE(route) - VARHDRSZ;
+            refSchemaJbv = findJsonbValueFromContainer(container, JB_FOBJECT, &k);
+        } else if (have_array) {
+            long		lindex;
+            			uint32		index;
+            			char	   *indextext = TextDatumGetCString(route);
+            			char	   *endptr;
+            
+            			errno = 0;
+            			lindex = strtol(indextext, &endptr, 10);
+            			if (endptr == indextext || *endptr != '\0' || errno != 0 ||
+            				lindex > INT_MAX || lindex < INT_MIN)
+            				return true;
+            
+            			if (lindex >= 0)
+            			{
+            				index = (uint32) lindex;
+            			}
+            			else
+            			{
+            				/* Handle negative subscript */
+            				uint32		nelements;
+            
+            				/* Container must be array, but make sure */
+            				if (!JsonContainerIsArray(container))
+            					elog(ERROR, "not a jsonb array");
+            
+            				nelements = JsonContainerSize(container);
+            
+            				if (-lindex > nelements)
+                                ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("$ref wrong path, index out of bounds")));
+            				else
+            					index = nelements + lindex;
+            			}
+            
+            			refSchemaJbv = getIthJsonbValueFromContainer(container, index);
+        } else {
+            // scalar access 
+            ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("$ref must point to a schema, not to a scalar")));
+        }
+        if (refSchemaJbv == NULL) {
+            ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Missing references $ref")));
+        }
+        if (i == npath -1 ) {
+            // No need to compute have_array or have_object now
+            break;
+        }
+        
+        if (refSchemaJbv->type == jbvBinary)
+        {
+            JsonbIterator *it = JsonbIteratorInit((JsonbContainer *) refSchemaJbv->val.binary.data);
+            JsonbIteratorToken r;
+            JsonbValue tv;
+    
+            r = JsonbIteratorNext(&it, &tv, true);
+            container = (JsonbContainer *) refSchemaJbv->val.binary.data;
+            have_object = r == WJB_BEGIN_OBJECT;
+            have_array = r == WJB_BEGIN_ARRAY;
+        }
+        else
+        {
+            // Not sure when this can happen
+            elog(INFO, "Type in $ref was not jbvBinary");
+            have_object = refSchemaJbv->type == jbvObject;
+            have_array = refSchemaJbv->type == jbvArray;
+        }
+    }
+    refSchemaJb = npath == 1 ? root_schema : JsonbValueToJsonb(refSchemaJbv);
+    return _is_jsonb_valid(refSchemaJb, dataJb, root_schema);
+}
+
 
 static bool validate_enum (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema)
 {

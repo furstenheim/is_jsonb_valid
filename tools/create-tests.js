@@ -3,9 +3,8 @@ const path = require('path')
 const testFolder = './../test/draft4/tests/draft4'
 const ignoredTests = [
   'refRemote.json',
-  'ref.json',
   'optional',
-  'definitions'
+  'definitions.json'
 ]
 main()
 
@@ -18,6 +17,8 @@ async function main () {
       const testLines = []
       const resultLines = []
       for (const testCase of testFile) {
+        if (file === 'ref.json' && (testCase.description.indexOf('remote') !== -1 || testCase.description.indexOf('Recursive references') !== -1|| testCase.description.indexOf('escaped pointer ref') !== -1 ))
+          continue
         testLines.push(`-- ${testCase.description}`)
         resultLines.push(`-- ${testCase.description}`)
         for (const test of testCase.tests) {
