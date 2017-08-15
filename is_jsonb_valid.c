@@ -451,7 +451,9 @@ static bool check_items (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema) 
     JsonbIterator * it;
     JsonbIteratorToken r;
     JsonbValue itemJbv;
-    if (!JB_ROOT_IS_ARRAY(dataJb)) return isValid;
+    // TODO check JB_ROOT_IS_ARRAY in the rest of the code
+    // Note that scalars also satisfy jb_root_is_array
+    if (!JB_ROOT_IS_ARRAY(dataJb) || JB_ROOT_IS_SCALAR(dataJb)) return isValid;
     itemsValue = get_jbv_from_key(schemaJb, "items");
 
     if (itemsValue == NULL)

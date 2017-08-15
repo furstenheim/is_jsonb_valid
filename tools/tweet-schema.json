@@ -150,7 +150,14 @@
           "properties": {
             "followers": {
               "type": "boolean"
-            } 
+            },
+            "place_ids": {
+              "type": "array",
+              "additionalItems": false,
+              "items": {
+                "type": "string"
+              }
+            }
           }
         },
         "retweeted": {
@@ -187,7 +194,11 @@
           "type": "string"
         },
         "contributors": {
-          "type": "null"
+          "type": ["null", "array"],
+          "items": {
+            "type": "integer"
+          },
+          "additionalItems": false
         },
         "in_reply_to_screen_name": {
           "type": [
@@ -444,10 +455,10 @@
               "items": {
                 "properties": {
                   "id": {
-                    "type": "integer"
+                    "type": ["null", "integer"]
                   },
                   "id_str": {
-                    "type": "string"
+                    "type": ["null", "string"]
                   },
                   "indices": {
                     "items": {
@@ -456,7 +467,7 @@
                     "type": "array"
                   },
                   "name": {
-                    "type": "string"
+                    "type": ["null", "string"]
                   },
                   "screen_name": {
                     "type": "string"
@@ -546,7 +557,7 @@
                   "type": "string"
                 }
               },
-              "type": "object"
+              "type": ["null", "object"]
             },
             "country": {
               "type": "string"

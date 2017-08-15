@@ -13,8 +13,8 @@ async function main () {
   // TO make sure we have latest version
   await client.query('DROP EXTENSION IF EXISTS is_jsonb_valid')
   await client.query('CREATE EXTENSION is_jsonb_valid')
-  const r = await client.query('SELECT * from (SELECT id, is_jsonb_valid($1, tweet) is_jsonb_valid from tweet_benchmark limit 5000) a where is_jsonb_valid = false', [tweetSchema])
-  // const r = await client.query('SELECT id, is_jsonb_valid($1, tweet) from tweet_benchmark where id = 28261', [tweetSchema])
+  const r = await client.query('SELECT * from (SELECT id, is_jsonb_valid($1, tweet) is_jsonb_valid from tweet_benchmark) a where is_jsonb_valid = false', [tweetSchema])
+  // const r = await client.query('SELECT id, is_jsonb_valid($1, tweet) from tweet_benchmark where id = 21853', [tweetSchema])
   console.log(r.rows)
   await client.end()
 }
