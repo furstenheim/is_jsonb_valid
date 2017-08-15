@@ -11,10 +11,7 @@ Examples:
     SELECT is_jsonb_valid('{"type": "object"}', '1');
     > f
 
-It passes [JSON-Schema-Test-Suite](https://github.com/json-schema-org/JSON-Schema-Test-Suite).
-
-### Draft compliance
-It implements most of the draft, with the notable exception of `$refRemote`.
+It passes all [JSON-Schema-Test-Suite](https://github.com/json-schema-org/JSON-Schema-Test-Suite), with the notable exception of `$refRemote`.
 
 ### Testing and Installation
 
@@ -28,7 +25,7 @@ This will compile the extension and run the tests. Later in psql run:
 
 ### Benchmarking
 
-Benchmarking is always tricky, I've tried to check agains a real world example, in particular tweets.
+Benchmarking is always tricky, I've tried to check against a real world example, in particular tweets.
 The only other extension that I know for this purpose is [postgres-json-schema](https://github.com/gavinwahl/postgres-json-schema/blob/master/postgres-json-schema--0.1.0.sql).
 For more information on how to run the benchmarks check `./tools/README.md`
 
