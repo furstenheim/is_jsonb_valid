@@ -38,3 +38,6 @@ For more information on how to run the benchmarks check `./tools/README.md`
 | 100 | 206.378 |  1975.543 | 9.6
 | 10000 | 8911.354 | 203172.464 | 22.8
 
+
+### Disclaimer
+This project is a based on postgres-json-schema. It has been written from scratch in C (original was written in SQL).
