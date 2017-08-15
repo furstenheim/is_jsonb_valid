@@ -4,9 +4,6 @@
     "type": "object",
     "additionalProperties": false,
     "properties": {
-      "place": {
-        "type": "null"
-      },
       "coordinates": {
         "type": "null"
       },
@@ -174,7 +171,7 @@
             "type": "integer"
           },
           "time_zone": {
-            "type": "null"
+            "type": ["string", "null"]
           },
           "url": {
             "type": [
@@ -183,7 +180,7 @@
             ]
           },
           "utc_offset": {
-            "type": "null"
+            "type": ["integer", "null"]
           },
           "verified": {
             "type": "boolean"
@@ -472,8 +469,125 @@
       "timestamp_ms": {
         "type": "string"
       },
+      "quoted_status": {
+        "$ref": "#/definitions/status"
+      },
+      "quoted_status_id": {
+        "type": "integer"
+      },
+      "quoted_status_id_str": {
+        "type": "string"
+      },
       "retweeted_status": {
         "$ref": "#/definitions/status"
+      },
+      "place": {
+        "type": ["null", "object"],
+        "additionalProperties": false,
+        "properties": {
+          "attributes": {
+            "properties": {},
+            "type": "object"
+          },
+          "bounding_box": {
+            "properties": {
+              "coordinates": {
+                "items": {
+                  "items": {
+                    "items": {
+                      "type": "number"
+                    },
+                    "type": "array"
+                  },
+                  "type": "array"
+                },
+                "type": "array"
+              },
+              "type": {
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "country": {
+            "type": "string"
+          },
+          "country_code": {
+            "type": "string"
+          },
+          "full_name": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "place_type": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        }
+      },
+      "extended_tweet": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "display_text_range": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "entities": {
+            "properties": {
+              "hashtags": {
+                "items": {},
+                "type": "array"
+              },
+              "symbols": {
+                "items": {},
+                "type": "array"
+              },
+              "urls": {
+                "items": {
+                  "properties": {
+                    "display_url": {
+                      "type": "string"
+                    },
+                    "expanded_url": {
+                      "type": "string"
+                    },
+                    "indices": {
+                      "items": {
+                        "type": "integer"
+                      },
+                      "type": "array"
+                    },
+                    "url": {
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              "user_mentions": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            },
+            "type": "object"
+          },
+          "full_text": {
+            "type": "string"
+          }
+        }
       }
     }
   }}
