@@ -4,7 +4,8 @@
   "description": "In progress",
   "main": "index.js",
   "scripts": {
-    "create-tests": "node create-tests.js"
+    "create-tests": "node create-tests.js",
+    "sample-tweets": "node tweet-sample.js"
   },
   "repository": {
     "type": "git",
@@ -17,6 +18,10 @@
   },
   "homepage": "https://github.com/furstenheim/is_jsonb_valid#readme",
   "dependencies": {
-    "fs-extra": "^4.0.1"
+    "async-csp": "^0.5.0",
+    "dotenv": "^4.0.0",
+    "fs-extra": "^4.0.1",
+    "pg": "^7.1.2",
+    "twit": "^2.2.9"
   }
 }

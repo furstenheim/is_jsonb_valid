@@ -1,2 +1,4 @@
 *.o
 *.so
+*.env
+npm-debug.log
