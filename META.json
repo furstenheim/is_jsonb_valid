@@ -1,0 +1,27 @@
+{
+  "abstract": "Validate json schemas",
+  "maintainer": "Furstenheim <furstenheim@gmail.com>",
+  "license": "mit",
+  "provides": {
+      "jsonb_deep_sum": {
+        "file": "is_jsonb_valid--0.0.1.sql",
+        "version": "0.0.1"
+      }
+  },
+  "meta-spec": {
+    "version": "1.0.0",
+    "url": "http://pgxn.org/meta/spec.txt"
+  },
+  "name": "is_jsonb_valid",
+  "version": "0.0.1",
+  "description": "Validate the integrity of jsons in the database making sure they validate against an schema",
+  "resources": {
+    "repository": {
+      "url": "https://github.com/furstenheim/is_jsonb_valid",
+      "type": "git"
+    }
+  },
+  "tags": [
+    "jsonb"
+  ]
+}
