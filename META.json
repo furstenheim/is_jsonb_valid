@@ -22,6 +22,6 @@
     }
   },
   "tags": [
-    "jsonb"
+    "jsonb", "json"
   ]
 }
