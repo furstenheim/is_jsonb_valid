@@ -1,4 +1,6 @@
 CREATE EXTENSION is_jsonb_valid;
+select is_jsonb_valid(NULL, NULL);
+select is_jsonb_valid(NULL, '{}');
 SELECT is_jsonb_valid('{}', '{}');
 select is_jsonb_valid('{"not": {"type": "object"}}', '1');
 select is_jsonb_valid('{"not": {"type": "object"}}', '{}');

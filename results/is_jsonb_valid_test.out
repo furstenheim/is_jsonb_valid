@@ -1,4 +1,16 @@
 CREATE EXTENSION is_jsonb_valid;
+select is_jsonb_valid(NULL, NULL);
+ is_jsonb_valid 
+----------------
+ 
+(1 row)
+
+select is_jsonb_valid(NULL, '{}');
+ is_jsonb_valid 
+----------------
+ 
+(1 row)
+
 SELECT is_jsonb_valid('{}', '{}');
  is_jsonb_valid 
 ----------------
