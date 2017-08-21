@@ -17,24 +17,23 @@ static bool _is_jsonb_valid (JsonbContainer * schemaJbContainer, Jsonb * dataJb,
 static bool validate_required (JsonbContainer * schemaJbContainer, Jsonb * dataJb);
 static bool validate_type (JsonbContainer * schemaJbContainer, Jsonb * dataJb, JsonbContainer * root_schema_container);
 static bool validate_properties (JsonbContainer * schemaJbContainer, Jsonb * dataJb, JsonbContainer * root_schema_container);
-static bool validate_items (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
-static bool validate_min (Jsonb * schemaJb, Jsonb * dataJb);
-static bool validate_max (Jsonb * schemaJb, Jsonb * dataJb);
-static bool validate_any_of (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
-static bool validate_all_of (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
-static bool validate_one_of (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
-static bool validate_unique_items (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
-static bool validate_ref (JsonbValue * refJbv, Jsonb * dataJb, Jsonb * root_schema);
-static bool validate_enum (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
-static bool validate_length (Jsonb * schemaJb, Jsonb * dataJb);
-static bool validate_not (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
-static bool validate_num_properties (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
-static bool validate_num_items (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
-static bool validate_dependencies (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
-static bool validate_pattern (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
-static bool validate_multiple_of (Jsonb * schemaJb, Jsonb * dataJb);
-static JsonbValue * get_jbv_from_key (Jsonb * in, const char * key);
-static JsonbValue * get_jbv_from_container (JsonbContainer * in, const char * key);
+static bool validate_items (JsonbContainer * schemaJbContainer, Jsonb * dataJb, JsonbContainer * root_schema_container);
+static bool validate_min (JsonbContainer * schemaJbContainer, Jsonb * dataJb);
+static bool validate_max (JsonbContainer * schemaJbContainer, Jsonb * dataJb);
+static bool validate_any_of (JsonbContainer * schemaJbContainer, Jsonb * dataJb, JsonbContainer * root_schema_container);
+static bool validate_all_of (JsonbContainer * schemaJbContainer, Jsonb * dataJb, JsonbContainer * root_schema_container);
+static bool validate_one_of (JsonbContainer * schemaJbContainer, Jsonb * dataJb, JsonbContainer * root_schema_container);
+static bool validate_unique_items (JsonbContainer * schemaJbContainer, Jsonb * dataJb);
+static bool validate_ref (JsonbValue * refJbv, Jsonb * dataJb, JsonbContainer * root_schema_container);
+static bool validate_enum (JsonbContainer * schemaJbContainer, Jsonb * dataJb);
+static bool validate_length (JsonbContainer * schemaJbContainer, Jsonb * dataJb);
+static bool validate_not (JsonbContainer * schemaJbContainer, Jsonb * dataJb, JsonbContainer * root_schema_container);
+static bool validate_num_properties (JsonbContainer * schemaJbContainer, Jsonb * dataJb);
+static bool validate_num_items (JsonbContainer * schemaJbContainer, Jsonb * dataJb);
+static bool validate_dependencies (JsonbContainer * schemaJbContainer, Jsonb * dataJb, JsonbContainer * root_schema_container);
+static bool validate_pattern (JsonbContainer * schemaJbContainer, Jsonb * dataJb);
+static bool validate_multiple_of (JsonbContainer * schemaJbContainer, Jsonb * dataJb);
+static JsonbValue * get_jbv_from_key (JsonbContainer * in, const char * key);
 
 PG_FUNCTION_INFO_V1(is_jsonb_valid);
 Datum
@@ -46,7 +45,7 @@ is_jsonb_valid(PG_FUNCTION_ARGS)
     PG_RETURN_BOOL(is_valid);
 }
 
-static bool _is_jsonb_valid (JsonbContainer * schemaJbContainer, Jsonb * dataJb, JsonbContainer * root_schema)
+static bool _is_jsonb_valid (JsonbContainer * schemaJbContainer, Jsonb * dataJb, JsonbContainer * root_schema_container)
 {
     JsonbValue * requiredValue, * refJbv;
     bool isValid = true;
@@ -55,11 +54,11 @@ static bool _is_jsonb_valid (JsonbContainer * schemaJbContainer, Jsonb * dataJb,
     if (!JsonContainerIsObject(schemaJbContainer))
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Schema must be an object")));
     
-    requiredValue = get_jbv_from_container(schemaJbContainer, "required");    
-    refJbv = get_jbv_from_container(schemaJbContainer, "$ref");
+    requiredValue = get_jbv_from_key(schemaJbContainer, "required");    
+    refJbv = get_jbv_from_key(schemaJbContainer, "$ref");
     // $ref overrides rest of properties
     if (refJbv != NULL) {
-        return true; //validate_ref(refJbv, dataJb, root_schema);
+        return validate_ref(refJbv, dataJb, root_schema_container);
     }
     
     // If jb is null then we still have to check for required
@@ -74,23 +73,23 @@ static bool _is_jsonb_valid (JsonbContainer * schemaJbContainer, Jsonb * dataJb,
 
     isValid = isValid && validate_required(schemaJbContainer, dataJb);
 
-    isValid = isValid && validate_type(schemaJbContainer, dataJb, root_schema);
-    isValid = isValid && validate_properties(schemaJbContainer, dataJb, root_schema);
-    isValid = isValid && validate_items(schemaJbContainer, dataJb, root_schema);
+    isValid = isValid && validate_type(schemaJbContainer, dataJb, root_schema_container);
+    isValid = isValid && validate_properties(schemaJbContainer, dataJb, root_schema_container);
+    isValid = isValid && validate_items(schemaJbContainer, dataJb, root_schema_container);
 
     isValid = isValid && validate_min(schemaJbContainer, dataJb);
     isValid = isValid && validate_max(schemaJbContainer, dataJb);
-    isValid = isValid && validate_any_of(schemaJbContainer, dataJb, root_schema);
-    isValid = isValid && validate_all_of(schemaJbContainer, dataJb, root_schema);
-    isValid = isValid && validate_one_of(schemaJbContainer, dataJb, root_schema);
-    isValid = isValid && validate_unique_items(schemaJbContainer, dataJb, root_schema);
-    isValid = isValid && validate_enum(schemaJbContainer, dataJb, root_schema);
+    isValid = isValid && validate_any_of(schemaJbContainer, dataJb, root_schema_container);
+    isValid = isValid && validate_all_of(schemaJbContainer, dataJb, root_schema_container);
+    isValid = isValid && validate_one_of(schemaJbContainer, dataJb, root_schema_container);
+    isValid = isValid && validate_unique_items(schemaJbContainer, dataJb);
+    isValid = isValid && validate_enum(schemaJbContainer, dataJb);
     isValid = isValid && validate_length(schemaJbContainer, dataJb);
-    isValid = isValid && validate_not(schemaJbContainer, dataJb, root_schema);
-    isValid = isValid && validate_num_properties(schemaJbContainer, dataJb, root_schema);
-    isValid = isValid && validate_num_items(schemaJbContainer, dataJb, root_schema);
-    isValid = isValid && validate_dependencies(schemaJbContainer, dataJb, root_schema);
-    isValid = isValid && validate_pattern(schemaJbContainer, dataJb, root_schema);
+    isValid = isValid && validate_not(schemaJbContainer, dataJb, root_schema_container);
+    isValid = isValid && validate_num_properties(schemaJbContainer, dataJb);
+    isValid = isValid && validate_num_items(schemaJbContainer, dataJb);
+    isValid = isValid && validate_dependencies(schemaJbContainer, dataJb, root_schema_container);
+    isValid = isValid && validate_pattern(schemaJbContainer, dataJb);
     isValid = isValid && validate_multiple_of(schemaJbContainer, dataJb);
     return isValid;
 }
@@ -196,7 +195,7 @@ static bool validate_required (JsonbContainer * schemaJbContainer, Jsonb * dataJ
     JsonbIteratorToken r;
     JsonbValue v;
     bool isValid = true;
-    requiredJbv = get_jbv_from_container(schemaJbContainer, "required");
+    requiredJbv = get_jbv_from_key(schemaJbContainer, "required");
 
     if (!JB_ROOT_IS_OBJECT(dataJb) || requiredJbv == NULL || requiredJbv->type != jbvBinary)
         return true;
@@ -224,7 +223,7 @@ static bool validate_type (JsonbContainer * schemaJbContainer, Jsonb * dataJb, J
     JsonbValue *typeJbv;
     Jsonb * typeJb;
 
-    typeJbv = get_jbv_from_container(schemaJbContainer, "type");
+    typeJbv = get_jbv_from_key(schemaJbContainer, "type");
 
     if (typeJbv == NULL)
         return true;
@@ -273,9 +272,9 @@ static bool validate_properties (JsonbContainer * schemaJbC, Jsonb * dataJb, Jso
 
     if (!JB_ROOT_IS_OBJECT(dataJb))
         return true;
-    propertiesJbv = get_jbv_from_container(schemaJbC, "properties");
-    additionalPropertiesJbv = get_jbv_from_container(schemaJbC, "additionalProperties");
-    patternPropertiesJbv = get_jbv_from_container(schemaJbC, "patternProperties");
+    propertiesJbv = get_jbv_from_key(schemaJbC, "properties");
+    additionalPropertiesJbv = get_jbv_from_key(schemaJbC, "additionalProperties");
+    patternPropertiesJbv = get_jbv_from_key(schemaJbC, "patternProperties");
 
     if (propertiesJbv == NULL && additionalPropertiesJbv == NULL && patternPropertiesJbv == NULL)
         return true;
@@ -340,7 +339,7 @@ static bool validate_properties (JsonbContainer * schemaJbC, Jsonb * dataJb, Jso
         r = JsonbIteratorNext(&it, &k, true);
         pR = JsonbIteratorNext(&pIt, &pK, true);
         while (isValid && !(r == WJB_END_OBJECT && pR == WJB_END_OBJECT)) {
-            Jsonb * subDataJb, * subSchemaJb;
+            Jsonb * subDataJb;
             // keys are sorted, difference tells us which one we should iterate (0 means they are even)
             int difference;
             if (pR == WJB_END_OBJECT) {
@@ -483,23 +482,24 @@ static bool validate_properties (JsonbContainer * schemaJbC, Jsonb * dataJb, Jso
     }
 }
 
-static bool validate_items (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema) {
+static bool validate_items (JsonbContainer * schemaJbC, Jsonb * dataJb, JsonbContainer * root_schema_container) {
     JsonbValue * itemsJbv, * additionalItemsJbv;
     bool isValid = true;
-    Jsonb * itemsJb;
+    JsonbContainer * itemsJbC;
     JsonbIterator * it;
     JsonbIteratorToken r;
     JsonbValue itemJbv;
     if (!root_is_really_an_array(dataJb)) return isValid;
-    itemsJbv = get_jbv_from_key(schemaJb, "items");
+    itemsJbv = get_jbv_from_key(schemaJbC, "items");
 
     if (itemsJbv == NULL)
         return true;
 
-    additionalItemsJbv = get_jbv_from_key(schemaJb, "additionalItems");
-    itemsJb = JsonbValueToJsonb(itemsJbv);
-
-    if (JB_ROOT_IS_OBJECT(itemsJb)) {
+    additionalItemsJbv = get_jbv_from_key(schemaJbC, "additionalItems");
+    if (itemsJbv->type != jbvBinary)
+        elog(ERROR, "Items must be array or object");
+    itemsJbC = (JsonbContainer *) itemsJbv->val.binary.data;
+    if (JsonContainerIsObject(itemsJbC)) {
         it = JsonbIteratorInit(&dataJb->root);
         r = JsonbIteratorNext(&it, &itemJbv, true);
         Assert(r == WJB_BEGIN_ARRAY);
@@ -512,22 +512,22 @@ static bool validate_items (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schem
                 break;
             }
             subDataJb = JsonbValueToJsonb(&itemJbv);
-            isItemValid = _is_jsonb_valid(itemsJb, subDataJb, root_schema);
+            isItemValid = _is_jsonb_valid(itemsJbC, subDataJb, root_schema_container);
             if (DEBUG_IS_JSONB_VALID && !isItemValid) elog(INFO, "Item is not valid");
             isValid = isValid && isItemValid;
         }
-    } else if (root_is_really_an_array(itemsJb)) {
+    } else if (JsonContainerIsArray(itemsJbC)) {
         JsonbIterator *schemaIt;
         JsonbIteratorToken schemaR;
         JsonbValue schemaJbv;
-        Jsonb * additionalItemsJb;
+        JsonbContainer * additionalItemsJbC;
         bool additionalItemsBuilt = false;
         bool isItemsObjectFinished = false;
         if (DEBUG_IS_JSONB_VALID) elog(INFO, "Items is array");
         it = JsonbIteratorInit(&dataJb->root);
         r = JsonbIteratorNext(&it, &itemJbv, true);
 
-        schemaIt = JsonbIteratorInit(&itemsJb->root);
+        schemaIt = JsonbIteratorInit(itemsJbC);
         schemaR = JsonbIteratorNext(&schemaIt, &schemaJbv, true);
 
         Assert(r == WJB_BEGIN_ARRAY);
@@ -544,10 +544,15 @@ static bool validate_items (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schem
                 break;
             }
             if (!isItemsObjectFinished) {
-                Jsonb * subDataJb, * subSchemaJb;
+                Jsonb * subDataJb;
+                JsonbContainer * subSchemaJbC;
                 subDataJb = JsonbValueToJsonb(&itemJbv);
-                subSchemaJb = JsonbValueToJsonb(&schemaJbv);
-                isItemValid = _is_jsonb_valid(subSchemaJb, subDataJb, root_schema);
+                 if (schemaJbv.type != jbvBinary)
+                     elog(ERROR, "schema must be an object");
+                 subSchemaJbC = (JsonbContainer *) schemaJbv.val.binary.data;
+                 if (!JsonContainerIsObject(subSchemaJbC))
+                     elog(ERROR, "schema must be an object");                  
+                isItemValid = _is_jsonb_valid(subSchemaJbC, subDataJb, root_schema_container);
                 if (DEBUG_IS_JSONB_VALID && !isItemValid) elog(INFO, "Item is not valid");                
             } else {
                 Jsonb * subDataJb;
@@ -561,12 +566,16 @@ static bool validate_items (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schem
                     break;
                 } else if (additionalItemsBuilt) {
                     subDataJb = JsonbValueToJsonb(&itemJbv);
-                    isItemValid = _is_jsonb_valid(additionalItemsJb, subDataJb, root_schema);
+                    isItemValid = _is_jsonb_valid(additionalItemsJbC, subDataJb, root_schema_container);
                 } else if (additionalItemsJbv->type == jbvBinary) {
                     additionalItemsBuilt = true;
-                    additionalItemsJb = JsonbValueToJsonb(additionalItemsJbv);
+                    if (additionalItemsJbv->type != jbvBinary)
+                        elog(ERROR, "schema must be an object");
+                    additionalItemsJbC= (JsonbContainer *) additionalItemsJbv->val.binary.data;
+                    if (!JsonContainerIsObject(additionalItemsJbC))
+                        elog(ERROR, "additionalItems must be an object");
                     subDataJb = JsonbValueToJsonb(&itemJbv);
-                    isItemValid = _is_jsonb_valid(additionalItemsJb, subDataJb, root_schema);
+                    isItemValid = _is_jsonb_valid(additionalItemsJbC, subDataJb, root_schema_container);
                     if (DEBUG_IS_JSONB_VALID && !isItemValid) elog(INFO, "Item does not validate against additionalItems");
                 } else {
                     break;
@@ -581,7 +590,7 @@ static bool validate_items (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schem
     return isValid;
 }
 
-static bool validate_min (Jsonb * schemaJb, Jsonb * dataJb)
+static bool validate_min (JsonbContainer * schemaJbContainer, Jsonb * dataJb)
 {
     JsonbIterator *it;
     JsonbValue	v;
@@ -590,7 +599,7 @@ static bool validate_min (Jsonb * schemaJb, Jsonb * dataJb)
     if (!is_type_correct(dataJb, "number", 6))
         return true;
 
-    minJbv = get_jbv_from_key(schemaJb, "minimum");
+    minJbv = get_jbv_from_key(schemaJbContainer, "minimum");
 
     if (minJbv == NULL || minJbv->type != jbvNumeric)
         return true;
@@ -606,7 +615,7 @@ static bool validate_min (Jsonb * schemaJb, Jsonb * dataJb)
         return false;
     }
 
-    exclusiveMinJbv = get_jbv_from_key(schemaJb, "exclusiveMinimum");
+    exclusiveMinJbv = get_jbv_from_key(schemaJbContainer, "exclusiveMinimum");
 
     if (exclusiveMinJbv == NULL || exclusiveMinJbv->type != jbvBool || exclusiveMinJbv->val.boolean != true)
         return true;
@@ -618,7 +627,7 @@ static bool validate_min (Jsonb * schemaJb, Jsonb * dataJb)
     return true;
 }
 
-static bool validate_max (Jsonb * schemaJb, Jsonb * dataJb)
+static bool validate_max (JsonbContainer * schemaJbContainer, Jsonb * dataJb)
 {
     JsonbIterator *it;
     JsonbValue	v;
@@ -628,7 +637,7 @@ static bool validate_max (Jsonb * schemaJb, Jsonb * dataJb)
         return true;
 
 
-    maxJbv = get_jbv_from_key(schemaJb, "maximum");
+    maxJbv = get_jbv_from_key(schemaJbContainer, "maximum");
 
     if (maxJbv == NULL || maxJbv->type != jbvNumeric)
         return true;
@@ -644,7 +653,7 @@ static bool validate_max (Jsonb * schemaJb, Jsonb * dataJb)
         return false;
     }
 
-    exclusiveMaxJbv = get_jbv_from_key(schemaJb, "exclusiveMaximum");
+    exclusiveMaxJbv = get_jbv_from_key(schemaJbContainer, "exclusiveMaximum");
 
     if (exclusiveMaxJbv == NULL || exclusiveMaxJbv->type != jbvBool || exclusiveMaxJbv->val.boolean != true)
         return true;
@@ -657,7 +666,7 @@ static bool validate_max (Jsonb * schemaJb, Jsonb * dataJb)
 }
 
 
-static bool validate_any_of (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema)
+static bool validate_any_of (JsonbContainer * schemaJbContainer, Jsonb * dataJb, JsonbContainer * root_schema_container)
 {
     JsonbValue * propertyJbv;
     JsonbIterator *it;
@@ -665,7 +674,7 @@ static bool validate_any_of (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_sche
     JsonbIteratorToken r;
     Jsonb * anyOfJb;
     bool isValid = false;
-    propertyJbv = get_jbv_from_key(schemaJb, "anyOf");
+    propertyJbv = get_jbv_from_key(schemaJbContainer, "anyOf");
     // It cannot be array
     if (propertyJbv == NULL || propertyJbv->type != jbvBinary) {
         return true;
@@ -679,18 +688,22 @@ static bool validate_any_of (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_sche
     Assert(r == WJB_BEGIN_ARRAY);
 
     while (!isValid) {
-        Jsonb * subSchemaJb;
+        JsonbContainer * subSchemaJbC;
         r = JsonbIteratorNext(&it, &v, true);
         if (r == WJB_END_ARRAY)
             break;
-        subSchemaJb = JsonbValueToJsonb(&v);
-        isValid = isValid || _is_jsonb_valid(subSchemaJb, dataJb, root_schema);
+        if (v.type != jbvBinary)
+            elog(ERROR, "Schema must be an object (anyOf)");
+        subSchemaJbC = (JsonbContainer *) v.val.binary.data;
+        if (!JsonContainerIsObject(subSchemaJbC))
+            elog(ERROR, "Schema must be an object (anyOf)");       
+        isValid = isValid || _is_jsonb_valid(subSchemaJbC, dataJb, root_schema_container);
     }
 
     return isValid;
 }
 
-static bool validate_all_of (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema)
+static bool validate_all_of (JsonbContainer * schemaJbContainer, Jsonb * dataJb, JsonbContainer * root_schema_container)
 {
     JsonbValue * propertyJbv;
     JsonbIterator *it;
@@ -698,7 +711,7 @@ static bool validate_all_of (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_sche
     JsonbIteratorToken r;
     Jsonb * allOfJb;
     bool isValid = true;
-    propertyJbv = get_jbv_from_key(schemaJb, "allOf");
+    propertyJbv = get_jbv_from_key(schemaJbContainer, "allOf");
     // It cannot be array
     if (propertyJbv == NULL || propertyJbv->type != jbvBinary) {
         return true;
@@ -712,18 +725,22 @@ static bool validate_all_of (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_sche
     Assert(r == WJB_BEGIN_ARRAY);
 
     while (isValid) {
-        Jsonb * subSchemaJb;
+        JsonbContainer * subSchemaJbC;
         r = JsonbIteratorNext(&it, &v, true);
         if (r == WJB_END_ARRAY)
             break;
-        subSchemaJb = JsonbValueToJsonb(&v);
-        isValid = isValid && _is_jsonb_valid(subSchemaJb, dataJb, root_schema);
+        if (v.type != jbvBinary)
+            elog(ERROR, "Schema must be an object (anyOf)");
+        subSchemaJbC = (JsonbContainer *) v.val.binary.data;
+        if (!JsonContainerIsObject(subSchemaJbC))
+            elog(ERROR, "Schema must be an object (anyOf)");   
+        isValid = isValid && _is_jsonb_valid(subSchemaJbC, dataJb, root_schema_container);
     }
 
     return isValid;
 }
 
-static bool validate_one_of (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema)
+static bool validate_one_of (JsonbContainer * schemaJbContainer, Jsonb * dataJb, JsonbContainer * root_schema_container)
 {
     JsonbValue * propertyJbv;
     JsonbIterator *it;
@@ -731,7 +748,7 @@ static bool validate_one_of (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_sche
     JsonbIteratorToken r;
     Jsonb * oneOfJb;
     int countValid = 0;
-    propertyJbv = get_jbv_from_key(schemaJb, "oneOf");
+    propertyJbv = get_jbv_from_key(schemaJbContainer, "oneOf");
     // It cannot be array
     if (propertyJbv == NULL || propertyJbv->type != jbvBinary) {
         return true;
@@ -745,12 +762,16 @@ static bool validate_one_of (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_sche
     Assert(r == WJB_BEGIN_ARRAY);
 
     while (countValid < 2) {
-        Jsonb * subSchemaJb;
+        JsonbContainer * subSchemaJbC;
         r = JsonbIteratorNext(&it, &v, true);
         if (r == WJB_END_ARRAY)
             break;
-        subSchemaJb = JsonbValueToJsonb(&v);
-        if (_is_jsonb_valid(subSchemaJb, dataJb, root_schema))
+        if (v.type != jbvBinary)
+            elog(ERROR, "Schema must be an object (anyOf)");
+        subSchemaJbC = (JsonbContainer *) v.val.binary.data;
+        if (!JsonContainerIsObject(subSchemaJbC))
+            elog(ERROR, "Schema must be an object (anyOf)");   
+        if (_is_jsonb_valid(subSchemaJbC, dataJb, root_schema_container))
             countValid += 1;
     }
 
@@ -760,7 +781,7 @@ static bool validate_one_of (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_sche
 /*
 * Unique items is far from optimal O(n2).
 */
-static bool validate_unique_items (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema)
+static bool validate_unique_items (JsonbContainer * schemaJbContainer, Jsonb * dataJb)
 {
         JsonbValue * propertyJbv;
         JsonbIterator *it;
@@ -768,7 +789,7 @@ static bool validate_unique_items (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * roo
         JsonbIteratorToken r;
         bool isValid = true;
         int i = 0;
-        propertyJbv = get_jbv_from_key(schemaJb, "uniqueItems");
+        propertyJbv = get_jbv_from_key(schemaJbContainer, "uniqueItems");
         // It cannot be array
         if (!root_is_really_an_array(dataJb) || propertyJbv == NULL || propertyJbv->type != jbvBool || propertyJbv->val.boolean == false) {
             return true;
@@ -803,12 +824,12 @@ static bool validate_unique_items (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * roo
         return isValid;
 }
 
-static bool validate_ref (JsonbValue * refJbv, Jsonb * dataJb, Jsonb * root_schema)
+static bool validate_ref (JsonbValue * refJbv, Jsonb * dataJb, JsonbContainer * root_schema_container)
 {
     ArrayType *path;
     Datum *pathtext;
     JsonbValue * refSchemaJbv;
-    Jsonb * refSchemaJb;
+    JsonbContainer * refSchemaJbC;
     bool *pathnulls;
     bool have_object = true, have_array = false;
     int npath;
@@ -835,8 +856,7 @@ static bool validate_ref (JsonbValue * refJbv, Jsonb * dataJb, Jsonb * root_sche
     // We only support refs anchored at root
     if (!DatumGetBool(DirectFunctionCall2(texteq, PointerGetDatum(pathtext[0]), PointerGetDatum(cstring_to_text("#")))))
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("$ref must be anchored at root")));
-    Assert(JB_ROOT_IS_OBJECT(root_schema));
-    container = &root_schema->root;
+    container = root_schema_container;
     
     for (i = 1; i < npath; i++) {
         text * route;
@@ -924,12 +944,20 @@ static bool validate_ref (JsonbValue * refJbv, Jsonb * dataJb, Jsonb * root_sche
             have_array = refSchemaJbv->type == jbvArray;
         }
     }
-    refSchemaJb = npath == 1 ? root_schema : JsonbValueToJsonb(refSchemaJbv);
-    return _is_jsonb_valid(refSchemaJb, dataJb, root_schema);
+    if (npath == 1) {
+        refSchemaJbC = root_schema_container;
+    } else {
+        if (refSchemaJbv->type != jbvBinary)
+            elog(ERROR, "Schema must be an object (anyOf)");
+        refSchemaJbC = (JsonbContainer *) refSchemaJbv->val.binary.data;
+        if (!JsonContainerIsObject(refSchemaJbC))
+            elog(ERROR, "Schema must be an object (anyOf)");   
+    }
+    return _is_jsonb_valid(refSchemaJbC, dataJb, root_schema_container);
 }
 
 
-static bool validate_enum (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema)
+static bool validate_enum (JsonbContainer * schemaJbContainer, Jsonb * dataJb)
 {
         JsonbValue * propertyJbv;
         Jsonb * enumJb;
@@ -937,7 +965,7 @@ static bool validate_enum (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema
         JsonbValue v;
         JsonbIteratorToken r;
         bool isValid = false;
-        propertyJbv = get_jbv_from_key(schemaJb, "enum");
+        propertyJbv = get_jbv_from_key(schemaJbContainer, "enum");
         if (propertyJbv == NULL || propertyJbv->type != jbvBinary)
         {
             return true;
@@ -960,7 +988,7 @@ static bool validate_enum (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema
         return isValid;
 }
 
-static bool validate_length (Jsonb * schemaJb, Jsonb * dataJb)
+static bool validate_length (JsonbContainer * schemaJbContainer, Jsonb * dataJb)
 {
     JsonbIterator *it;
     JsonbValue	v;
@@ -977,7 +1005,7 @@ static bool validate_length (Jsonb * schemaJb, Jsonb * dataJb)
     (void) JsonbIteratorNext(&it, &v, true);
 
 
-    minLenghtJbv = get_jbv_from_key(schemaJb, "minLength");
+    minLenghtJbv = get_jbv_from_key(schemaJbContainer, "minLength");
 
     if (minLenghtJbv != NULL && minLenghtJbv->type == jbvNumeric) {
         int length = DatumGetInt32(DirectFunctionCall1(textlen, PointerGetDatum(cstring_to_text_with_len(v.val.string.val, v.val.string.len))));
@@ -986,7 +1014,7 @@ static bool validate_length (Jsonb * schemaJb, Jsonb * dataJb)
         isValid = isValid && DatumGetBool(DirectFunctionCall2(numeric_ge, DirectFunctionCall1(int4_numeric, length), PointerGetDatum(minLenghtJbv->val.numeric)));
     }
 
-    maxLengthJbv = get_jbv_from_key(schemaJb, "maxLength");
+    maxLengthJbv = get_jbv_from_key(schemaJbContainer, "maxLength");
 
     if (maxLengthJbv != NULL && maxLengthJbv->type == jbvNumeric) {
         int length = DatumGetInt32(DirectFunctionCall1(textlen, PointerGetDatum(cstring_to_text_with_len(v.val.string.val, v.val.string.len))));
@@ -995,23 +1023,26 @@ static bool validate_length (Jsonb * schemaJb, Jsonb * dataJb)
     return isValid;
 }
 
-static bool validate_not (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema)
+static bool validate_not (JsonbContainer * schemaJbContainer, Jsonb * dataJb, JsonbContainer * root_schema_container)
 {
     JsonbValue * propertyJbv;
-    Jsonb * notJb;
-    propertyJbv = get_jbv_from_key(schemaJb, "not");
+    JsonbContainer * notJbC;
+    propertyJbv = get_jbv_from_key(schemaJbContainer, "not");
     // It cannot be array
     if (propertyJbv == NULL || propertyJbv->type != jbvBinary) {
         return true;
     }
-    notJb = JsonbValueToJsonb(propertyJbv);
-    if (!JB_ROOT_IS_OBJECT(notJb)) {
-        return true;
-    }
-    return !_is_jsonb_valid(notJb, dataJb, root_schema);
+    
+    if (propertyJbv->type != jbvBinary)
+        elog(ERROR, "Schema must be an object (not)");
+    notJbC = (JsonbContainer *) propertyJbv->val.binary.data;
+    if (!JsonContainerIsObject(notJbC))
+        elog(ERROR, "Schema must be an object (not)");       
+    
+    return !_is_jsonb_valid(notJbC, dataJb, root_schema_container);
 }
 
-static bool validate_num_properties (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema)
+static bool validate_num_properties (JsonbContainer * schemaJbContainer, Jsonb * dataJb)
 {
     JsonbValue * maxPropertiesJbv, * minPropertiesJbv;
     JsonbIterator *it;
@@ -1024,8 +1055,8 @@ static bool validate_num_properties (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * r
     if (!JB_ROOT_IS_OBJECT(dataJb))
         return true;
 
-    minPropertiesJbv = get_jbv_from_key(schemaJb, "minProperties");
-    maxPropertiesJbv = get_jbv_from_key(schemaJb, "maxProperties");
+    minPropertiesJbv = get_jbv_from_key(schemaJbContainer, "minProperties");
+    maxPropertiesJbv = get_jbv_from_key(schemaJbContainer, "maxProperties");
 
     if (minPropertiesJbv == NULL && maxPropertiesJbv == NULL)
         return true;
@@ -1042,7 +1073,7 @@ static bool validate_num_properties (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * r
     return isValid;
 }
 
-static bool validate_num_items (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema)
+static bool validate_num_items (JsonbContainer * schemaJbContainer, Jsonb * dataJb)
 {
     JsonbValue * maxItemsJbv, * minItemsJbv;
     JsonbIterator *it;
@@ -1055,8 +1086,8 @@ static bool validate_num_items (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_s
     if (!root_is_really_an_array(dataJb))
         return true;
 
-    minItemsJbv = get_jbv_from_key(schemaJb, "minItems");
-    maxItemsJbv = get_jbv_from_key(schemaJb, "maxItems");
+    minItemsJbv = get_jbv_from_key(schemaJbContainer, "minItems");
+    maxItemsJbv = get_jbv_from_key(schemaJbContainer, "maxItems");
 
     if (minItemsJbv == NULL && maxItemsJbv == NULL)
         return true;
@@ -1074,7 +1105,7 @@ static bool validate_num_items (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_s
 }
 
 // TODO validate against malformed types
-static bool validate_dependencies (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema)
+static bool validate_dependencies (JsonbContainer * schemaJbContainer, Jsonb * dataJb, JsonbContainer * root_schema_container)
 {
     JsonbValue *dependenciesJbv;
     Jsonb *dependenciesJb;
@@ -1086,7 +1117,7 @@ static bool validate_dependencies (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * roo
     if (!JB_ROOT_IS_OBJECT(dataJb))
         return true;
 
-    dependenciesJbv = get_jbv_from_key(schemaJb, "dependencies");
+    dependenciesJbv = get_jbv_from_key(schemaJbContainer, "dependencies");
     if (dependenciesJbv == NULL || dependenciesJbv->type != jbvBinary)
         return true;
 
@@ -1107,15 +1138,18 @@ static bool validate_dependencies (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * roo
                 dependentProperty = findJsonbValueFromContainer(&dataJb->root, JB_FOBJECT, &v);
                 isValid = isValid && (dependentProperty != NULL);
             } else if (v.type == jbvBinary) {
-                Jsonb * dependencyJb;
-                dependencyJb = JsonbValueToJsonb(&v);
-
-                if (root_is_really_an_array(dependencyJb)) {
+                JsonbContainer * dependencyJbC;
+                
+                if (v.type != jbvBinary)
+                    elog(ERROR, "Dependency must be an object or an array");
+                dependencyJbC = (JsonbContainer *) v.val.binary.data;
+                  
+                if (JsonContainerIsArray(dependencyJbC)) {
                     JsonbIterator * dependencyIt;
                     JsonbIteratorToken dependencyR;
                     JsonbValue dependencyKey;
 
-                    dependencyIt = JsonbIteratorInit(&dependencyJb->root);
+                    dependencyIt = JsonbIteratorInit(dependencyJbC);
                     dependencyR = JsonbIteratorNext(&dependencyIt, &dependencyKey, true);
                     Assert(dependencyR == WJB_BEGIN_ARRAY);
                     while (isValid) {
@@ -1128,8 +1162,8 @@ static bool validate_dependencies (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * roo
                             isValid = isValid && (dependantProperty != NULL);
                         }
                     }
-                } else if (JB_ROOT_IS_OBJECT(dependencyJb)) {
-                    isValid = isValid && _is_jsonb_valid(dependencyJb, dataJb, root_schema);
+                } else if (JsonContainerIsObject(dependencyJbC)) {
+                    isValid = isValid && _is_jsonb_valid(dependencyJbC, dataJb, root_schema_container);
                 }
             }
         }
@@ -1137,7 +1171,7 @@ static bool validate_dependencies (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * roo
     return isValid;
 }
 
-static bool validate_pattern (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema)
+static bool validate_pattern (JsonbContainer * schemaJbContainer, Jsonb * dataJb)
 {
     JsonbIterator *it;
     JsonbValue	v;
@@ -1146,7 +1180,7 @@ static bool validate_pattern (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_sch
     // bool isValid = true;
     if (!is_type_correct(dataJb, "string", 6))
         return true;
-    patternJbv = get_jbv_from_key(schemaJb, "pattern");
+    patternJbv = get_jbv_from_key(schemaJbContainer, "pattern");
     if (patternJbv == NULL) {
         return true;
     }
@@ -1165,7 +1199,7 @@ static bool validate_pattern (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_sch
     return isValid;
 }
 
-static bool validate_multiple_of (Jsonb * schemaJb, Jsonb * dataJb)
+static bool validate_multiple_of (JsonbContainer * schemaJbContainer, Jsonb * dataJb)
 {
     JsonbIterator *it;
     JsonbValue	v;
@@ -1176,7 +1210,7 @@ static bool validate_multiple_of (Jsonb * schemaJb, Jsonb * dataJb)
         return true;
 
 
-    multipleOfJbv = get_jbv_from_key(schemaJb, "multipleOf");
+    multipleOfJbv = get_jbv_from_key(schemaJbContainer, "multipleOf");
 
     if (multipleOfJbv == NULL || multipleOfJbv->type != jbvNumeric)
         return true;
@@ -1195,22 +1229,7 @@ static bool validate_multiple_of (Jsonb * schemaJb, Jsonb * dataJb)
 }
 
 
-
-static JsonbValue * get_jbv_from_key (Jsonb * in, const char * key)
-{
-    JsonbValue propertyKey;
-    JsonbValue * propertyJbv;
-    text* keyText;
-    propertyKey.type = jbvString;
-    keyText = cstring_to_text(key);
-    propertyKey.val.string.val = VARDATA_ANY(keyText);
-    propertyKey.val.string.len = VARSIZE_ANY_EXHDR(keyText);
-    // findJsonbValueFromContainer returns palloced value
-    propertyJbv = findJsonbValueFromContainer(&in->root, JB_FOBJECT, &propertyKey);
-    return propertyJbv;
-}
-
-static JsonbValue * get_jbv_from_container (JsonbContainer * in, const char * key)
+static JsonbValue * get_jbv_from_key (JsonbContainer * in, const char * key)
 {
     JsonbValue propertyKey;
     JsonbValue * propertyJbv;
