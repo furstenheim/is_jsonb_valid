@@ -201,7 +201,7 @@ static bool validate_required (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_sc
     if (!JB_ROOT_IS_OBJECT(dataJb) || requiredJbv == NULL || requiredJbv->type != jbvBinary)
         return true;
     requiredJb = JsonbValueToJsonb(requiredJbv);
-    if (!JB_ROOT_IS_ARRAY(requiredJb))
+    if (!root_is_really_an_array(requiredJb))
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Required must be boolean or array")));
     it = JsonbIteratorInit(&requiredJb->root);
     r = JsonbIteratorNext(&it, &v, true);
@@ -238,7 +238,7 @@ static bool validate_type (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema
         JsonbIterator * it;
         JsonbValue v;
         typeJb = JsonbValueToJsonb(typeJbv);
-        if (!JB_ROOT_IS_ARRAY(typeJb))
+        if (!root_is_really_an_array(typeJb))
            ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("type must be string or array")));
         it = JsonbIteratorInit(&typeJb->root);
         r = JsonbIteratorNext(&it, &v, true);
@@ -467,8 +467,6 @@ static bool validate_items (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schem
     JsonbIterator * it;
     JsonbIteratorToken r;
     JsonbValue itemJbv;
-    // TODO check JB_ROOT_IS_ARRAY in the rest of the code
-    // Note that scalars also satisfy jb_root_is_array
     if (!root_is_really_an_array(dataJb)) return isValid;
     itemsJbv = get_jbv_from_key(schemaJb, "items");
 
@@ -650,7 +648,7 @@ static bool validate_any_of (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_sche
         return true;
     }
     anyOfJb = JsonbValueToJsonb(propertyJbv);
-    if (!JB_ROOT_IS_ARRAY(anyOfJb)) {
+    if (!root_is_really_an_array(anyOfJb)) {
         return true;
     }
     it = JsonbIteratorInit(&anyOfJb->root);
@@ -683,7 +681,7 @@ static bool validate_all_of (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_sche
         return true;
     }
     allOfJb = JsonbValueToJsonb(propertyJbv);
-    if (!JB_ROOT_IS_ARRAY(allOfJb)) {
+    if (!root_is_really_an_array(allOfJb)) {
         return true;
     }
     it = JsonbIteratorInit(&allOfJb->root);
@@ -716,7 +714,7 @@ static bool validate_one_of (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_sche
         return true;
     }
     oneOfJb = JsonbValueToJsonb(propertyJbv);
-    if (!JB_ROOT_IS_ARRAY(oneOfJb)) {
+    if (!root_is_really_an_array(oneOfJb)) {
         return true;
     }
     it = JsonbIteratorInit(&oneOfJb->root);
@@ -749,7 +747,7 @@ static bool validate_unique_items (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * roo
         int i = 0;
         propertyJbv = get_jbv_from_key(schemaJb, "uniqueItems");
         // It cannot be array
-        if (!JB_ROOT_IS_ARRAY(dataJb) || propertyJbv == NULL || propertyJbv->type != jbvBool || propertyJbv->val.boolean == false) {
+        if (!root_is_really_an_array(dataJb) || propertyJbv == NULL || propertyJbv->type != jbvBool || propertyJbv->val.boolean == false) {
             return true;
         }
         it = JsonbIteratorInit(&dataJb->root);
@@ -922,7 +920,7 @@ static bool validate_enum (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema
             return true;
         }
         enumJb = JsonbValueToJsonb(propertyJbv);
-        if (!JB_ROOT_IS_ARRAY(enumJb))
+        if (!root_is_really_an_array(enumJb))
             return true;
         it = JsonbIteratorInit(&enumJb->root);
         r = JsonbIteratorNext(&it, &v, true);
@@ -1089,7 +1087,7 @@ static bool validate_dependencies (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * roo
                 Jsonb * dependencyJb;
                 dependencyJb = JsonbValueToJsonb(&v);
 
-                if (JB_ROOT_IS_ARRAY(dependencyJb)) {
+                if (root_is_really_an_array(dependencyJb)) {
                     JsonbIterator * dependencyIt;
                     JsonbIteratorToken dependencyR;
                     JsonbValue dependencyKey;
