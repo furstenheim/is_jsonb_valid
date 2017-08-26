@@ -4,8 +4,8 @@
   "license": "mit",
   "provides": {
       "jsonb_deep_sum": {
-        "file": "is_jsonb_valid--0.0.1.sql",
-        "version": "0.0.1"
+        "file": "is_jsonb_valid--0.1.0.sql",
+        "version": "0.1.0"
       }
   },
   "meta-spec": {

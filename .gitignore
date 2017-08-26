@@ -2,3 +2,8 @@
 *.so
 *.env
 npm-debug.log
+*.gcda
+coverage
+lcov.info
+*.gcno
+*.gcov.out

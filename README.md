@@ -1,4 +1,6 @@
 ## Is jsonb valid
+![Build Status](https://travis-ci.org/furstenheim/is_jsonb_valid.svg?branch=master)
+
 
 is_jsonb_valid is a native PostgreSQL extension to validate json schemas following [Draft4](https://tools.ietf.org/html/draft-zyp-json-schema-04).
 The extension exposes only one function `is_jsonb_valid(schema jsonb, data jsonb)` which returns a boolean depending 
@@ -15,7 +17,7 @@ It passes all [JSON-Schema-Test-Suite](https://github.com/json-schema-org/JSON-S
 
 ### Testing and Installation
 
-In the directory of the project do:
+Make sure that you have PostgreSQL 9.6. In the directory of the project do:
 
     make install && make installcheck
     
