@@ -40,8 +40,13 @@ PG_FUNCTION_INFO_V1(is_jsonb_valid);
 Datum
 is_jsonb_valid(PG_FUNCTION_ARGS)
 {
-    Jsonb *my_schema = PG_GETARG_JSONB(0);
-    Jsonb *my_jsonb = PG_GETARG_JSONB(1);
+    #ifdef PG_GETARG_JSONB_P
+        Jsonb *my_schema = PG_GETARG_JSONB_P(0);
+        Jsonb *my_jsonb = PG_GETARG_JSONB_P(1);
+    #else
+        Jsonb *my_schema = PG_GETARG_JSONB(0);
+        Jsonb *my_jsonb = PG_GETARG_JSONB(1);
+    #endif
     bool is_valid = _is_jsonb_valid(my_schema, my_jsonb, my_schema);
     PG_RETURN_BOOL(is_valid);
 }

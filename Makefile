@@ -1,6 +1,6 @@
 #PREREQUISITES: prepare_tests
 EXTENSION = is_jsonb_valid
-DATA = is_jsonb_valid--0.1.0.sql
+DATA = is_jsonb_valid--0.1.1.sql
 REGRESS = is_jsonb_valid_test additionalItems additionalProperties allOf anyOf default dependencies enum items maxItems maxLength maxProperties maximum minItems minLength minProperties minimum multipleOf not oneOf pattern patternProperties properties ref required type uniqueItems
 MODULES = is_jsonb_valid
 
