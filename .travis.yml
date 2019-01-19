@@ -5,4 +5,6 @@ before_install:
   - sudo sh ./apt.postgresql.org.sh
 env:
   - PGVERSION=9.6
+  - PGVERSION=10
+  - PGVERSION=11
 script: bash ./pg-travis-test.sh
