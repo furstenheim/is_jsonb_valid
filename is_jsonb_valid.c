@@ -10,6 +10,7 @@
 // Not very nice, but it is only defined internally
 #define JsonContainerIsArray(jc)	(((jc)->header & JB_FARRAY) != 0)
 #define JsonContainerSize(jc)		((jc)->header & JB_CMASK)
+#define _unused(x) ((void)(x))
 
 PG_MODULE_MAGIC;
 
@@ -446,7 +447,9 @@ static bool validate_properties (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_
             if (propertiesJbv != NULL) {
                 JsonbValue * subSchemaJbv;
                 Jsonb * subSchemaJb;
+                #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
                 subSchemaJbv = findJsonbValueFromContainer(&propertiesJb->root, JB_FOBJECT, &k);
+                #pragma GCC diagnostic pop
                 if (subSchemaJbv != NULL) {
                     subSchemaJb = JsonbValueToJsonb(subSchemaJbv);
                     isValid = isValid && _is_jsonb_valid(subSchemaJb, subDataJbv, root_schema);
@@ -457,7 +460,9 @@ static bool validate_properties (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_
                 if (additionalPropertiesJbv->type == jbvBool && additionalPropertiesJbv->val.boolean == false) {
                     isValid = false;
                 } else if (JB_ROOT_IS_OBJECT(additionalPropertiesJb)) {
+                    #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
                     isValid = isValid && _is_jsonb_valid(additionalPropertiesJb, subDataJbv, root_schema);
+                    #pragma GCC diagnostic pop
                 }
             }
         }
@@ -772,6 +777,7 @@ static bool validate_unique_items (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * roo
             it2 = JsonbIteratorInit(&dataJb->root);
             r2 = JsonbIteratorNext(&it2, &v2, true);
             Assert(r2 == WJB_BEGIN_ARRAY);
+            _unused(r2);
             while (isValid) {
                 Jsonb * subDataJb2;
                 r2 = JsonbIteratorNext(&it2, &v2, true);
@@ -815,7 +821,9 @@ static bool validate_ref (JsonbValue * refJbv, Jsonb * dataJb, Jsonb * root_sche
     if (npath <= 0) 
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("$ref must not be an empty string"))); // Not sure if npath = 0 can actually happen. Even for empty strings
     // We only support refs anchored at root
-    if (!DatumGetBool(DirectFunctionCall2(texteq, PointerGetDatum(pathtext[0]), PointerGetDatum(cstring_to_text("#")))))
+    if (!DatumGetBool(DirectFunctionCall2Coll(texteq,
+            DEFAULT_COLLATION_OID,
+            PointerGetDatum(pathtext[0]), PointerGetDatum(cstring_to_text("#")))))
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("$ref must be anchored at root")));
     Assert(JB_ROOT_IS_OBJECT(root_schema));
     container = &root_schema->root;
@@ -906,7 +914,9 @@ static bool validate_ref (JsonbValue * refJbv, Jsonb * dataJb, Jsonb * root_sche
             have_array = refSchemaJbv->type == jbvArray;
         }
     }
+    #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
     refSchemaJb = npath == 1 ? root_schema : JsonbValueToJsonb(refSchemaJbv);
+    #pragma GCC diagnostic pop
     return _is_jsonb_valid(refSchemaJb, dataJb, root_schema);
 }
 
@@ -1015,6 +1025,7 @@ static bool validate_num_properties (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * r
     it = JsonbIteratorInit(&dataJb->root);
     r = JsonbIteratorNext(&it, &v, true);
     Assert(r == WJB_BEGIN_OBJECT);
+    _unused(r);
     Assert(v.type == jbvObject);
 
     if (minPropertiesJbv != NULL && minPropertiesJbv->type == jbvNumeric)
@@ -1046,6 +1057,7 @@ static bool validate_num_items (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_s
     it = JsonbIteratorInit(&dataJb->root);
     r = JsonbIteratorNext(&it, &v, true);
     Assert(r == WJB_BEGIN_ARRAY);
+    _unused(r);
     Assert(v.type == jbvArray);
 
     if (minItemsJbv != NULL && minItemsJbv->type == jbvNumeric)
