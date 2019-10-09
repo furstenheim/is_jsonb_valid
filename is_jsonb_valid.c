@@ -10,6 +10,7 @@
 // Not very nice, but it is only defined internally
 #define JsonContainerIsArray(jc)	(((jc)->header & JB_FARRAY) != 0)
 #define JsonContainerSize(jc)		((jc)->header & JB_CMASK)
+#define _unused(x) ((void)(x))
 
 PG_MODULE_MAGIC;
 
@@ -772,6 +773,7 @@ static bool validate_unique_items (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * roo
             it2 = JsonbIteratorInit(&dataJb->root);
             r2 = JsonbIteratorNext(&it2, &v2, true);
             Assert(r2 == WJB_BEGIN_ARRAY);
+            _unused(r2);
             while (isValid) {
                 Jsonb * subDataJb2;
                 r2 = JsonbIteratorNext(&it2, &v2, true);
@@ -1015,6 +1017,7 @@ static bool validate_num_properties (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * r
     it = JsonbIteratorInit(&dataJb->root);
     r = JsonbIteratorNext(&it, &v, true);
     Assert(r == WJB_BEGIN_OBJECT);
+    _unused(r);
     Assert(v.type == jbvObject);
 
     if (minPropertiesJbv != NULL && minPropertiesJbv->type == jbvNumeric)
@@ -1046,6 +1049,7 @@ static bool validate_num_items (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_s
     it = JsonbIteratorInit(&dataJb->root);
     r = JsonbIteratorNext(&it, &v, true);
     Assert(r == WJB_BEGIN_ARRAY);
+    _unused(r);
     Assert(v.type == jbvArray);
 
     if (minItemsJbv != NULL && minItemsJbv->type == jbvNumeric)
