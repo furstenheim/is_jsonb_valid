@@ -447,7 +447,9 @@ static bool validate_properties (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_
             if (propertiesJbv != NULL) {
                 JsonbValue * subSchemaJbv;
                 Jsonb * subSchemaJb;
+                #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
                 subSchemaJbv = findJsonbValueFromContainer(&propertiesJb->root, JB_FOBJECT, &k);
+                #pragma GCC diagnostic pop
                 if (subSchemaJbv != NULL) {
                     subSchemaJb = JsonbValueToJsonb(subSchemaJbv);
                     isValid = isValid && _is_jsonb_valid(subSchemaJb, subDataJbv, root_schema);
@@ -458,7 +460,9 @@ static bool validate_properties (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_
                 if (additionalPropertiesJbv->type == jbvBool && additionalPropertiesJbv->val.boolean == false) {
                     isValid = false;
                 } else if (JB_ROOT_IS_OBJECT(additionalPropertiesJb)) {
+                    #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
                     isValid = isValid && _is_jsonb_valid(additionalPropertiesJb, subDataJbv, root_schema);
+                    #pragma GCC diagnostic pop
                 }
             }
         }
@@ -908,7 +912,9 @@ static bool validate_ref (JsonbValue * refJbv, Jsonb * dataJb, Jsonb * root_sche
             have_array = refSchemaJbv->type == jbvArray;
         }
     }
+    #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
     refSchemaJb = npath == 1 ? root_schema : JsonbValueToJsonb(refSchemaJbv);
+    #pragma GCC diagnostic pop
     return _is_jsonb_valid(refSchemaJb, dataJb, root_schema);
 }
 
