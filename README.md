@@ -17,7 +17,7 @@ It passes all [JSON-Schema-Test-Suite](https://github.com/json-schema-org/JSON-S
 
 ### Testing and Installation
 
-Make sure that you have PostgreSQL 9.6 or newer. In the directory of the project do:
+Make sure that you have PostgreSQL 9.6 or newer (check travis.yml for supported versions). In the directory of the project do:
 
     make install && make installcheck
     
