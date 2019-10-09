@@ -821,7 +821,9 @@ static bool validate_ref (JsonbValue * refJbv, Jsonb * dataJb, Jsonb * root_sche
     if (npath <= 0) 
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("$ref must not be an empty string"))); // Not sure if npath = 0 can actually happen. Even for empty strings
     // We only support refs anchored at root
-    if (!DatumGetBool(DirectFunctionCall2(texteq, PointerGetDatum(pathtext[0]), PointerGetDatum(cstring_to_text("#")))))
+    if (!DatumGetBool(DirectFunctionCall2Coll(texteq,
+            DEFAULT_COLLATION_OID,
+            PointerGetDatum(pathtext[0]), PointerGetDatum(cstring_to_text("#")))))
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("$ref must be anchored at root")));
     Assert(JB_ROOT_IS_OBJECT(root_schema));
     container = &root_schema->root;
