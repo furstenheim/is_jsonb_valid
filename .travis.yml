@@ -7,4 +7,5 @@ env:
   - PGVERSION=9.6
   - PGVERSION=10
   - PGVERSION=11
+  - PGVERSION=12
 script: bash ./pg-travis-test.sh
