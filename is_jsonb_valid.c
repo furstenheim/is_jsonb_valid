@@ -447,6 +447,7 @@ static bool validate_properties (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_
             if (propertiesJbv != NULL) {
                 JsonbValue * subSchemaJbv;
                 Jsonb * subSchemaJb;
+
                 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
                 subSchemaJbv = findJsonbValueFromContainer(&propertiesJb->root, JB_FOBJECT, &k);
                 #pragma GCC diagnostic pop
