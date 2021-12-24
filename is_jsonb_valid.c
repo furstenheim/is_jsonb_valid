@@ -60,14 +60,14 @@ static bool _is_jsonb_valid (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_sche
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Schema cannot be undefined")));
     if (!JB_ROOT_IS_OBJECT(schemaJb))
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Schema must be an object")));
-    
-    requiredValue = get_jbv_from_key(schemaJb, "required");    
+
+    requiredValue = get_jbv_from_key(schemaJb, "required");
     refJbv = get_jbv_from_key(schemaJb, "$ref");
     // $ref overrides rest of properties
     if (refJbv != NULL) {
         return validate_ref(refJbv, dataJb, root_schema);
     }
-    
+
     // If jb is null then we still have to check for required
     if (dataJb == NULL) {
         if (requiredValue != NULL && requiredValue->type == jbvBool) {
@@ -75,8 +75,8 @@ static bool _is_jsonb_valid (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_sche
         }
         return true;
     }
-    
-    
+
+
 
     isValid = isValid && validate_required(schemaJb, dataJb, root_schema);
 
@@ -324,9 +324,9 @@ static bool validate_properties (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_
         }
         // Unknown model
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("additionalProperties must be object or boolean")));
-    /* 
+    /*
      * Sorted merged join to validate properties so O(#keys)
-     * we traverse dataJb and propertiesJb simultaneously. 
+     * we traverse dataJb and propertiesJb simultaneously.
      * If a property is present in the schema but not in the object (difference > 0) we check if the property was required
      * If the property is present in the object but not in the schema (difference < 0) we check the value against additionalProperties
     */
@@ -536,7 +536,7 @@ static bool validate_items (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schem
                 subDataJb = JsonbValueToJsonb(&itemJbv);
                 subSchemaJb = JsonbValueToJsonb(&schemaJbv);
                 isItemValid = _is_jsonb_valid(subSchemaJb, subDataJb, root_schema);
-                if (DEBUG_IS_JSONB_VALID && !isItemValid) elog(INFO, "Item is not valid");                
+                if (DEBUG_IS_JSONB_VALID && !isItemValid) elog(INFO, "Item is not valid");
             } else {
                 Jsonb * subDataJb;
                 if (DEBUG_IS_JSONB_VALID) elog(INFO, "Validating against additionalItems");
@@ -580,10 +580,10 @@ static bool validate_min (Jsonb * schemaJb, Jsonb * dataJb)
 
     minJbv = get_jbv_from_key(schemaJb, "minimum");
 
-    if (minJbv == NULL || minJbv->type != jbvNumeric)
+    if (minJbv == NULL || minJbv->type != jbvNumeric) {
         return true;
-
-	it = JsonbIteratorInit(&dataJb->root);
+    }
+    it = JsonbIteratorInit(&dataJb->root);
     // scalar is saved as array of one element
     (void) JsonbIteratorNext(&it, &v, true);
     Assert(v.type == jbvArray);
@@ -621,7 +621,7 @@ static bool validate_max (Jsonb * schemaJb, Jsonb * dataJb)
     if (maxJbv == NULL || maxJbv->type != jbvNumeric)
         return true;
 
-	it = JsonbIteratorInit(&dataJb->root);
+    it = JsonbIteratorInit(&dataJb->root);
     // scalar is saved as array of one element
     (void) JsonbIteratorNext(&it, &v, true);
     Assert(v.type == jbvArray);
@@ -808,7 +808,7 @@ static bool validate_ref (JsonbValue * refJbv, Jsonb * dataJb, Jsonb * root_sche
     {
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("$ref must be a string")));
     }
-    
+
     path = DatumGetArrayTypeP(DirectFunctionCall2Coll(
         regexp_split_to_array,
         DEFAULT_COLLATION_OID,
@@ -819,7 +819,7 @@ static bool validate_ref (JsonbValue * refJbv, Jsonb * dataJb, Jsonb * root_sche
     */
     deconstruct_array(path, TEXTOID, -1, false, 'i',
                             &pathtext, &pathnulls, &npath);
-    if (npath <= 0) 
+    if (npath <= 0)
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("$ref must not be an empty string"))); // Not sure if npath = 0 can actually happen. Even for empty strings
     // We only support refs anchored at root
     if (!DatumGetBool(DirectFunctionCall2Coll(texteq,
@@ -828,21 +828,21 @@ static bool validate_ref (JsonbValue * refJbv, Jsonb * dataJb, Jsonb * root_sche
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("$ref must be anchored at root")));
     Assert(JB_ROOT_IS_OBJECT(root_schema));
     container = &root_schema->root;
-    
+
     for (i = 1; i < npath; i++) {
         text * route;
-       
+
         // TODO textregexreplace_noopt replaces only first instance. We should replace all instances
         route = DatumGetTextP(DirectFunctionCall3Coll(
             textregexreplace_noopt,
             DEFAULT_COLLATION_OID,
             DirectFunctionCall3Coll(
-                textregexreplace_noopt, 
+                textregexreplace_noopt,
                 DEFAULT_COLLATION_OID,
-                PointerGetDatum(pathtext[i]), 
-                CStringGetTextDatum("~1"), 
+                PointerGetDatum(pathtext[i]),
+                CStringGetTextDatum("~1"),
                 CStringGetTextDatum("/")),
-            CStringGetTextDatum("~0"), 
+            CStringGetTextDatum("~0"),
             CStringGetTextDatum("~")));
         if (have_object) {
             JsonbValue k;
@@ -855,13 +855,13 @@ static bool validate_ref (JsonbValue * refJbv, Jsonb * dataJb, Jsonb * root_sche
             			uint32		index;
             			char	   *indextext = TextDatumGetCString(route);
             			char	   *endptr;
-            
+
             			errno = 0;
             			lindex = strtol(indextext, &endptr, 10);
             			if (endptr == indextext || *endptr != '\0' || errno != 0 ||
             				lindex > INT_MAX || lindex < INT_MIN)
             				return true;
-            
+
             			if (lindex >= 0)
             			{
             				index = (uint32) lindex;
@@ -870,22 +870,22 @@ static bool validate_ref (JsonbValue * refJbv, Jsonb * dataJb, Jsonb * root_sche
             			{
             				/* Handle negative subscript */
             				uint32		nelements;
-            
+
             				/* Container must be array, but make sure */
             				if (!JsonContainerIsArray(container))
             					elog(ERROR, "not a jsonb array");
-            
+
             				nelements = JsonContainerSize(container);
-            
+
             				if (-lindex > nelements)
                                 ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("$ref wrong path, index out of bounds")));
             				else
             					index = nelements + lindex;
             			}
-            
+
             			refSchemaJbv = getIthJsonbValueFromContainer(container, index);
         } else {
-            // scalar access 
+            // scalar access
             ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("$ref must point to a schema, not to a scalar")));
         }
         if (refSchemaJbv == NULL) {
@@ -895,13 +895,13 @@ static bool validate_ref (JsonbValue * refJbv, Jsonb * dataJb, Jsonb * root_sche
             // No need to compute have_array or have_object now
             break;
         }
-        
+
         if (refSchemaJbv->type == jbvBinary)
         {
             JsonbIterator *it = JsonbIteratorInit((JsonbContainer *) refSchemaJbv->val.binary.data);
             JsonbIteratorToken r;
             JsonbValue tv;
-    
+
             r = JsonbIteratorNext(&it, &tv, true);
             container = (JsonbContainer *) refSchemaJbv->val.binary.data;
             have_object = r == WJB_BEGIN_OBJECT;
@@ -963,7 +963,7 @@ static bool validate_length (Jsonb * schemaJb, Jsonb * dataJb)
     if (!is_type_correct(dataJb, "string", 6))
         return true;
 
-	it = JsonbIteratorInit(&dataJb->root);
+    it = JsonbIteratorInit(&dataJb->root);
     // scalar is saved as array of one element
     (void) JsonbIteratorNext(&it, &v, true);
     Assert(v.type == jbvArray);
@@ -974,7 +974,7 @@ static bool validate_length (Jsonb * schemaJb, Jsonb * dataJb)
 
     if (minLenghtJbv != NULL && minLenghtJbv->type == jbvNumeric) {
         int length = DatumGetInt32(DirectFunctionCall1(textlen, PointerGetDatum(cstring_to_text_with_len(v.val.string.val, v.val.string.len))));
-        
+
         if (DEBUG_IS_JSONB_VALID) elog(INFO, "Length is %d", length);
         isValid = isValid && DatumGetBool(DirectFunctionCall2(numeric_ge, DirectFunctionCall1(int4_numeric, length), PointerGetDatum(minLenghtJbv->val.numeric)));
     }
@@ -1176,7 +1176,7 @@ static bool validate_multiple_of (Jsonb * schemaJb, Jsonb * dataJb)
     if (multipleOfJbv == NULL || multipleOfJbv->type != jbvNumeric)
         return true;
 
-	it = JsonbIteratorInit(&dataJb->root);
+    it = JsonbIteratorInit(&dataJb->root);
     // scalar is saved as array of one element
     (void) JsonbIteratorNext(&it, &v, true);
     Assert(v.type == jbvArray);

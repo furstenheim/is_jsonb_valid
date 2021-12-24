@@ -17,13 +17,20 @@ It passes all [JSON-Schema-Test-Suite](https://github.com/json-schema-org/JSON-S
 
 ### Testing and Installation
 
-Make sure that you have PostgreSQL 9.6 or newer (check travis.yml for supported versions). In the directory of the project do:
+Make sure that you have PostgreSQL 9.6 or newer (check ci.yml for supported versions). In the directory of the project do:
 
     make install && make installcheck
     
 This will compile the extension and run the tests. Later in psql run:
 
     CREATE EXTENSION is_jsonb_valid;
+
+You can also run tests without installing postgres.
+
+```
+docker run -it --rm --mount "type=bind,src=$(pwd),dst=/repo" pgxn/pgxn-tools     sh -c 'cd /repo && pg-start 12 && pg-build-test'
+
+```
 
 ### Benchmarking
 
