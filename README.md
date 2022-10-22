@@ -1,5 +1,5 @@
 ## Is jsonb valid
-![Build Status](https://travis-ci.org/furstenheim/is_jsonb_valid.svg?branch=master)
+![Build Status](https://travis-ci.org/furstenheim/is\_jsonb_valid.svg?branch=master)
 
 
 is_jsonb_valid is a native PostgreSQL extension to validate json schemas following [Draft4](https://tools.ietf.org/html/draft-zyp-json-schema-04).
