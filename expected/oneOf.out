@@ -49,3 +49,120 @@ SELECT is_jsonb_valid('{"type":"string","oneOf":[{"minLength":2},{"maxLength":4}
  f
 (1 row)
 
+-- oneOf complex types
+-- first oneOf valid (complex)
+SELECT is_jsonb_valid('{"oneOf":[{"properties":{"bar":{"type":"integer"}},"required":["bar"]},{"properties":{"foo":{"type":"string"}},"required":["foo"]}]}', '{"bar":2}');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- second oneOf valid (complex)
+SELECT is_jsonb_valid('{"oneOf":[{"properties":{"bar":{"type":"integer"}},"required":["bar"]},{"properties":{"foo":{"type":"string"}},"required":["foo"]}]}', '{"foo":"baz"}');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- both oneOf valid (complex)
+SELECT is_jsonb_valid('{"oneOf":[{"properties":{"bar":{"type":"integer"}},"required":["bar"]},{"properties":{"foo":{"type":"string"}},"required":["foo"]}]}', '{"foo":"baz","bar":2}');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- neither oneOf valid (complex)
+SELECT is_jsonb_valid('{"oneOf":[{"properties":{"bar":{"type":"integer"}},"required":["bar"]},{"properties":{"foo":{"type":"string"}},"required":["foo"]}]}', '{"foo":2,"bar":"quux"}');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- oneOf with empty schema
+-- one valid - valid
+SELECT is_jsonb_valid('{"oneOf":[{"type":"number"},{}]}', '"foo"');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- both valid - invalid
+SELECT is_jsonb_valid('{"oneOf":[{"type":"number"},{}]}', '123');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- oneOf with required
+-- both invalid - invalid
+SELECT is_jsonb_valid('{"type":"object","oneOf":[{"required":["foo","bar"]},{"required":["foo","baz"]}]}', '{"bar":2}');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- first valid - valid
+SELECT is_jsonb_valid('{"type":"object","oneOf":[{"required":["foo","bar"]},{"required":["foo","baz"]}]}', '{"foo":1,"bar":2}');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- second valid - valid
+SELECT is_jsonb_valid('{"type":"object","oneOf":[{"required":["foo","bar"]},{"required":["foo","baz"]}]}', '{"foo":1,"baz":3}');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- both valid - invalid
+SELECT is_jsonb_valid('{"type":"object","oneOf":[{"required":["foo","bar"]},{"required":["foo","baz"]}]}', '{"foo":1,"bar":2,"baz":3}');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- oneOf with missing optional property
+-- first oneOf valid
+SELECT is_jsonb_valid('{"oneOf":[{"properties":{"bar":{},"baz":{}},"required":["bar"]},{"properties":{"foo":{}},"required":["foo"]}]}', '{"bar":8}');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- second oneOf valid
+SELECT is_jsonb_valid('{"oneOf":[{"properties":{"bar":{},"baz":{}},"required":["bar"]},{"properties":{"foo":{}},"required":["foo"]}]}', '{"foo":"foo"}');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- both oneOf valid
+SELECT is_jsonb_valid('{"oneOf":[{"properties":{"bar":{},"baz":{}},"required":["bar"]},{"properties":{"foo":{}},"required":["foo"]}]}', '{"foo":"foo","bar":8}');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- neither oneOf valid
+SELECT is_jsonb_valid('{"oneOf":[{"properties":{"bar":{},"baz":{}},"required":["bar"]},{"properties":{"foo":{}},"required":["foo"]}]}', '{"baz":"quux"}');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- nested oneOf, to check validation semantics
+-- null is valid
+SELECT is_jsonb_valid('{"oneOf":[{"oneOf":[{"type":"null"}]}]}', 'null');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- anything non-null is invalid
+SELECT is_jsonb_valid('{"oneOf":[{"oneOf":[{"type":"null"}]}]}', '123');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+

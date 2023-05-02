@@ -63,6 +63,13 @@ SELECT is_jsonb_valid('{"type":"number"}', '1');
  t
 (1 row)
 
+-- a float with zero fractional part is a number
+SELECT is_jsonb_valid('{"type":"number"}', '1');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
 -- a float is a number
 SELECT is_jsonb_valid('{"type":"number"}', '1.1');
  is_jsonb_valid 
@@ -136,6 +143,13 @@ SELECT is_jsonb_valid('{"type":"string"}', '"foo"');
 
 -- a string is still a string, even if it looks like a number
 SELECT is_jsonb_valid('{"type":"string"}', '"1"');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- an empty string is still a string
+SELECT is_jsonb_valid('{"type":"string"}', '""');
  is_jsonb_valid 
 ----------------
  t
@@ -277,6 +291,13 @@ SELECT is_jsonb_valid('{"type":"boolean"}', '1');
  f
 (1 row)
 
+-- zero is not a boolean
+SELECT is_jsonb_valid('{"type":"boolean"}', '0');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
 -- a float is not a boolean
 SELECT is_jsonb_valid('{"type":"boolean"}', '1.1');
  is_jsonb_valid 
@@ -286,6 +307,13 @@ SELECT is_jsonb_valid('{"type":"boolean"}', '1.1');
 
 -- a string is not a boolean
 SELECT is_jsonb_valid('{"type":"boolean"}', '"foo"');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- an empty string is not a boolean
+SELECT is_jsonb_valid('{"type":"boolean"}', '""');
  is_jsonb_valid 
 ----------------
  f
@@ -305,8 +333,15 @@ SELECT is_jsonb_valid('{"type":"boolean"}', '[]');
  f
 (1 row)
 
--- a boolean is a boolean
+-- true is a boolean
 SELECT is_jsonb_valid('{"type":"boolean"}', 'true');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- false is a boolean
+SELECT is_jsonb_valid('{"type":"boolean"}', 'false');
  is_jsonb_valid 
 ----------------
  t
@@ -334,8 +369,22 @@ SELECT is_jsonb_valid('{"type":"null"}', '1.1');
  f
 (1 row)
 
+-- zero is not null
+SELECT is_jsonb_valid('{"type":"null"}', '0');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
 -- a string is not null
 SELECT is_jsonb_valid('{"type":"null"}', '"foo"');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- an empty string is not null
+SELECT is_jsonb_valid('{"type":"null"}', '""');
  is_jsonb_valid 
 ----------------
  f
@@ -355,8 +404,15 @@ SELECT is_jsonb_valid('{"type":"null"}', '[]');
  f
 (1 row)
 
--- a boolean is not null
+-- true is not null
 SELECT is_jsonb_valid('{"type":"null"}', 'true');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- false is not null
+SELECT is_jsonb_valid('{"type":"null"}', 'false');
  is_jsonb_valid 
 ----------------
  f
@@ -414,6 +470,93 @@ SELECT is_jsonb_valid('{"type":["integer","string"]}', 'true');
 
 -- null is invalid
 SELECT is_jsonb_valid('{"type":["integer","string"]}', 'null');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- type as array with one item
+-- string is valid
+SELECT is_jsonb_valid('{"type":["string"]}', '"foo"');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- number is invalid
+SELECT is_jsonb_valid('{"type":["string"]}', '123');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- type: array or object
+-- array is valid
+SELECT is_jsonb_valid('{"type":["array","object"]}', '[1,2,3]');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- object is valid
+SELECT is_jsonb_valid('{"type":["array","object"]}', '{"foo":123}');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- number is invalid
+SELECT is_jsonb_valid('{"type":["array","object"]}', '123');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- string is invalid
+SELECT is_jsonb_valid('{"type":["array","object"]}', '"foo"');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- null is invalid
+SELECT is_jsonb_valid('{"type":["array","object"]}', 'null');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- type: array, object or null
+-- array is valid
+SELECT is_jsonb_valid('{"type":["array","object","null"]}', '[1,2,3]');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- object is valid
+SELECT is_jsonb_valid('{"type":["array","object","null"]}', '{"foo":123}');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- null is valid
+SELECT is_jsonb_valid('{"type":["array","object","null"]}', 'null');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- number is invalid
+SELECT is_jsonb_valid('{"type":["array","object","null"]}', '123');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- string is invalid
+SELECT is_jsonb_valid('{"type":["array","object","null"]}', '"foo"');
  is_jsonb_valid 
 ----------------
  f

@@ -13,8 +13,43 @@ SELECT is_jsonb_valid('{"pattern":"^a*$"}', '"abc"');
  f
 (1 row)
 
--- ignores non-strings
+-- ignores booleans
 SELECT is_jsonb_valid('{"pattern":"^a*$"}', 'true');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- ignores integers
+SELECT is_jsonb_valid('{"pattern":"^a*$"}', '123');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- ignores floats
+SELECT is_jsonb_valid('{"pattern":"^a*$"}', '1');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- ignores objects
+SELECT is_jsonb_valid('{"pattern":"^a*$"}', '{}');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- ignores arrays
+SELECT is_jsonb_valid('{"pattern":"^a*$"}', '[]');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- ignores null
+SELECT is_jsonb_valid('{"pattern":"^a*$"}', 'null');
  is_jsonb_valid 
 ----------------
  t
