@@ -13,7 +13,7 @@ main()
 
 async function main () {
   await parseFolder(testFolder, 'v4')
-  // await parseFolder(testFolderV7, 'v7')
+  await parseFolder(testFolderV7, 'v7')
 }
 
 async function parseFolder (folder, version) {
