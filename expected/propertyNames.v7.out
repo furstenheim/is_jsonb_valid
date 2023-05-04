@@ -1,0 +1,95 @@
+-- propertyNames validation
+-- all property names valid
+SELECT is_jsonb_valid_draft_v7('{"propertyNames":{"maxLength":3}}', '{"f":{},"foo":{}}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- some property names invalid
+SELECT is_jsonb_valid_draft_v7('{"propertyNames":{"maxLength":3}}', '{"foo":{},"foobar":{}}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- object without properties is valid
+SELECT is_jsonb_valid_draft_v7('{"propertyNames":{"maxLength":3}}', '{}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- ignores arrays
+SELECT is_jsonb_valid_draft_v7('{"propertyNames":{"maxLength":3}}', '[1,2,3,4]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- ignores strings
+SELECT is_jsonb_valid_draft_v7('{"propertyNames":{"maxLength":3}}', '"foobar"');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- ignores other non-objects
+SELECT is_jsonb_valid_draft_v7('{"propertyNames":{"maxLength":3}}', '12');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- propertyNames validation with pattern
+-- matching property names valid
+SELECT is_jsonb_valid_draft_v7('{"propertyNames":{"pattern":"^a+$"}}', '{"a":{},"aa":{},"aaa":{}}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- non-matching property name is invalid
+SELECT is_jsonb_valid_draft_v7('{"propertyNames":{"pattern":"^a+$"}}', '{"aaA":{}}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- object without properties is valid
+SELECT is_jsonb_valid_draft_v7('{"propertyNames":{"pattern":"^a+$"}}', '{}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- propertyNames with boolean schema true
+-- object with any properties is valid
+SELECT is_jsonb_valid_draft_v7('{"propertyNames":true}', '{"foo":1}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- empty object is valid
+SELECT is_jsonb_valid_draft_v7('{"propertyNames":true}', '{}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- propertyNames with boolean schema false
+-- object with any properties is invalid
+SELECT is_jsonb_valid_draft_v7('{"propertyNames":false}', '{"foo":1}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- empty object is valid
+SELECT is_jsonb_valid_draft_v7('{"propertyNames":false}', '{}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+

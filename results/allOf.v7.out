@@ -1,0 +1,210 @@
+-- allOf
+-- allOf
+SELECT is_jsonb_valid_draft_v7('{"allOf":[{"properties":{"bar":{"type":"integer"}},"required":["bar"]},{"properties":{"foo":{"type":"string"}},"required":["foo"]}]}', '{"foo":"baz","bar":2}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- mismatch second
+SELECT is_jsonb_valid_draft_v7('{"allOf":[{"properties":{"bar":{"type":"integer"}},"required":["bar"]},{"properties":{"foo":{"type":"string"}},"required":["foo"]}]}', '{"foo":"baz"}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- mismatch first
+SELECT is_jsonb_valid_draft_v7('{"allOf":[{"properties":{"bar":{"type":"integer"}},"required":["bar"]},{"properties":{"foo":{"type":"string"}},"required":["foo"]}]}', '{"bar":2}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- wrong type
+SELECT is_jsonb_valid_draft_v7('{"allOf":[{"properties":{"bar":{"type":"integer"}},"required":["bar"]},{"properties":{"foo":{"type":"string"}},"required":["foo"]}]}', '{"foo":"baz","bar":"quux"}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- allOf with base schema
+-- valid
+SELECT is_jsonb_valid_draft_v7('{"properties":{"bar":{"type":"integer"}},"required":["bar"],"allOf":[{"properties":{"foo":{"type":"string"}},"required":["foo"]},{"properties":{"baz":{"type":"null"}},"required":["baz"]}]}', '{"foo":"quux","bar":2,"baz":null}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- mismatch base schema
+SELECT is_jsonb_valid_draft_v7('{"properties":{"bar":{"type":"integer"}},"required":["bar"],"allOf":[{"properties":{"foo":{"type":"string"}},"required":["foo"]},{"properties":{"baz":{"type":"null"}},"required":["baz"]}]}', '{"foo":"quux","baz":null}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- mismatch first allOf
+SELECT is_jsonb_valid_draft_v7('{"properties":{"bar":{"type":"integer"}},"required":["bar"],"allOf":[{"properties":{"foo":{"type":"string"}},"required":["foo"]},{"properties":{"baz":{"type":"null"}},"required":["baz"]}]}', '{"bar":2,"baz":null}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- mismatch second allOf
+SELECT is_jsonb_valid_draft_v7('{"properties":{"bar":{"type":"integer"}},"required":["bar"],"allOf":[{"properties":{"foo":{"type":"string"}},"required":["foo"]},{"properties":{"baz":{"type":"null"}},"required":["baz"]}]}', '{"foo":"quux","bar":2}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- mismatch both
+SELECT is_jsonb_valid_draft_v7('{"properties":{"bar":{"type":"integer"}},"required":["bar"],"allOf":[{"properties":{"foo":{"type":"string"}},"required":["foo"]},{"properties":{"baz":{"type":"null"}},"required":["baz"]}]}', '{"bar":2}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- allOf simple types
+-- valid
+SELECT is_jsonb_valid_draft_v7('{"allOf":[{"maximum":30},{"minimum":20}]}', '25');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- mismatch one
+SELECT is_jsonb_valid_draft_v7('{"allOf":[{"maximum":30},{"minimum":20}]}', '35');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- allOf with boolean schemas, all true
+-- any value is valid
+SELECT is_jsonb_valid_draft_v7('{"allOf":[true,true]}', '"foo"');
+ERROR:  Schema must be an object
+-- allOf with boolean schemas, some false
+-- any value is invalid
+SELECT is_jsonb_valid_draft_v7('{"allOf":[true,false]}', '"foo"');
+ERROR:  Schema must be an object
+-- allOf with boolean schemas, all false
+-- any value is invalid
+SELECT is_jsonb_valid_draft_v7('{"allOf":[false,false]}', '"foo"');
+ERROR:  Schema must be an object
+-- allOf with one empty schema
+-- any data is valid
+SELECT is_jsonb_valid_draft_v7('{"allOf":[{}]}', '1');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- allOf with two empty schemas
+-- any data is valid
+SELECT is_jsonb_valid_draft_v7('{"allOf":[{},{}]}', '1');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- allOf with the first empty schema
+-- number is valid
+SELECT is_jsonb_valid_draft_v7('{"allOf":[{},{"type":"number"}]}', '1');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- string is invalid
+SELECT is_jsonb_valid_draft_v7('{"allOf":[{},{"type":"number"}]}', '"foo"');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- allOf with the last empty schema
+-- number is valid
+SELECT is_jsonb_valid_draft_v7('{"allOf":[{"type":"number"},{}]}', '1');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- string is invalid
+SELECT is_jsonb_valid_draft_v7('{"allOf":[{"type":"number"},{}]}', '"foo"');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- nested allOf, to check validation semantics
+-- null is valid
+SELECT is_jsonb_valid_draft_v7('{"allOf":[{"allOf":[{"type":"null"}]}]}', 'null');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- anything non-null is invalid
+SELECT is_jsonb_valid_draft_v7('{"allOf":[{"allOf":[{"type":"null"}]}]}', '123');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- allOf combined with anyOf, oneOf
+-- allOf: false, anyOf: false, oneOf: false
+SELECT is_jsonb_valid_draft_v7('{"allOf":[{"multipleOf":2}],"anyOf":[{"multipleOf":3}],"oneOf":[{"multipleOf":5}]}', '1');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- allOf: false, anyOf: false, oneOf: true
+SELECT is_jsonb_valid_draft_v7('{"allOf":[{"multipleOf":2}],"anyOf":[{"multipleOf":3}],"oneOf":[{"multipleOf":5}]}', '5');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- allOf: false, anyOf: true, oneOf: false
+SELECT is_jsonb_valid_draft_v7('{"allOf":[{"multipleOf":2}],"anyOf":[{"multipleOf":3}],"oneOf":[{"multipleOf":5}]}', '3');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- allOf: false, anyOf: true, oneOf: true
+SELECT is_jsonb_valid_draft_v7('{"allOf":[{"multipleOf":2}],"anyOf":[{"multipleOf":3}],"oneOf":[{"multipleOf":5}]}', '15');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- allOf: true, anyOf: false, oneOf: false
+SELECT is_jsonb_valid_draft_v7('{"allOf":[{"multipleOf":2}],"anyOf":[{"multipleOf":3}],"oneOf":[{"multipleOf":5}]}', '2');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- allOf: true, anyOf: false, oneOf: true
+SELECT is_jsonb_valid_draft_v7('{"allOf":[{"multipleOf":2}],"anyOf":[{"multipleOf":3}],"oneOf":[{"multipleOf":5}]}', '10');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- allOf: true, anyOf: true, oneOf: false
+SELECT is_jsonb_valid_draft_v7('{"allOf":[{"multipleOf":2}],"anyOf":[{"multipleOf":3}],"oneOf":[{"multipleOf":5}]}', '6');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- allOf: true, anyOf: true, oneOf: true
+SELECT is_jsonb_valid_draft_v7('{"allOf":[{"multipleOf":2}],"anyOf":[{"multipleOf":3}],"oneOf":[{"multipleOf":5}]}', '30');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+

@@ -1,0 +1,181 @@
+-- a schema given for items
+-- valid items
+SELECT is_jsonb_valid_draft_v7('{"items":{"type":"integer"}}', '[1,2,3]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- wrong type of items
+SELECT is_jsonb_valid_draft_v7('{"items":{"type":"integer"}}', '[1,"x"]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- ignores non-arrays
+SELECT is_jsonb_valid_draft_v7('{"items":{"type":"integer"}}', '{"foo":"bar"}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- JavaScript pseudo-array is valid
+SELECT is_jsonb_valid_draft_v7('{"items":{"type":"integer"}}', '{"0":"invalid","length":1}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- an array of schemas for items
+-- correct types
+SELECT is_jsonb_valid_draft_v7('{"items":[{"type":"integer"},{"type":"string"}]}', '[1,"foo"]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- wrong types
+SELECT is_jsonb_valid_draft_v7('{"items":[{"type":"integer"},{"type":"string"}]}', '["foo",1]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- incomplete array of items
+SELECT is_jsonb_valid_draft_v7('{"items":[{"type":"integer"},{"type":"string"}]}', '[1]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- array with additional items
+SELECT is_jsonb_valid_draft_v7('{"items":[{"type":"integer"},{"type":"string"}]}', '[1,"foo",true]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- empty array
+SELECT is_jsonb_valid_draft_v7('{"items":[{"type":"integer"},{"type":"string"}]}', '[]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- JavaScript pseudo-array is valid
+SELECT is_jsonb_valid_draft_v7('{"items":[{"type":"integer"},{"type":"string"}]}', '{"0":"invalid","1":"valid","length":2}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- items with boolean schema (true)
+-- any array is valid
+SELECT is_jsonb_valid_draft_v7('{"items":true}', '[1,"foo",true]');
+ERROR:  Items must be array or object
+-- empty array is valid
+SELECT is_jsonb_valid_draft_v7('{"items":true}', '[]');
+ERROR:  Items must be array or object
+-- items with boolean schema (false)
+-- any non-empty array is invalid
+SELECT is_jsonb_valid_draft_v7('{"items":false}', '[1,"foo",true]');
+ERROR:  Items must be array or object
+-- empty array is valid
+SELECT is_jsonb_valid_draft_v7('{"items":false}', '[]');
+ERROR:  Items must be array or object
+-- items with boolean schemas
+-- array with one item is valid
+SELECT is_jsonb_valid_draft_v7('{"items":[true,false]}', '[1]');
+ERROR:  Schema must be an object
+-- array with two items is invalid
+SELECT is_jsonb_valid_draft_v7('{"items":[true,false]}', '[1,"foo"]');
+ERROR:  Schema must be an object
+-- empty array is valid
+SELECT is_jsonb_valid_draft_v7('{"items":[true,false]}', '[]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- items and subitems
+-- valid items
+SELECT is_jsonb_valid_draft_v7('{"definitions":{"item":{"type":"array","additionalItems":false,"items":[{"$ref":"#/definitions/sub-item"},{"$ref":"#/definitions/sub-item"}]},"sub-item":{"type":"object","required":["foo"]}},"type":"array","additionalItems":false,"items":[{"$ref":"#/definitions/item"},{"$ref":"#/definitions/item"},{"$ref":"#/definitions/item"}]}', '[[{"foo":null},{"foo":null}],[{"foo":null},{"foo":null}],[{"foo":null},{"foo":null}]]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- too many items
+SELECT is_jsonb_valid_draft_v7('{"definitions":{"item":{"type":"array","additionalItems":false,"items":[{"$ref":"#/definitions/sub-item"},{"$ref":"#/definitions/sub-item"}]},"sub-item":{"type":"object","required":["foo"]}},"type":"array","additionalItems":false,"items":[{"$ref":"#/definitions/item"},{"$ref":"#/definitions/item"},{"$ref":"#/definitions/item"}]}', '[[{"foo":null},{"foo":null}],[{"foo":null},{"foo":null}],[{"foo":null},{"foo":null}],[{"foo":null},{"foo":null}]]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- too many sub-items
+SELECT is_jsonb_valid_draft_v7('{"definitions":{"item":{"type":"array","additionalItems":false,"items":[{"$ref":"#/definitions/sub-item"},{"$ref":"#/definitions/sub-item"}]},"sub-item":{"type":"object","required":["foo"]}},"type":"array","additionalItems":false,"items":[{"$ref":"#/definitions/item"},{"$ref":"#/definitions/item"},{"$ref":"#/definitions/item"}]}', '[[{"foo":null},{"foo":null},{"foo":null}],[{"foo":null},{"foo":null}],[{"foo":null},{"foo":null}]]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- wrong item
+SELECT is_jsonb_valid_draft_v7('{"definitions":{"item":{"type":"array","additionalItems":false,"items":[{"$ref":"#/definitions/sub-item"},{"$ref":"#/definitions/sub-item"}]},"sub-item":{"type":"object","required":["foo"]}},"type":"array","additionalItems":false,"items":[{"$ref":"#/definitions/item"},{"$ref":"#/definitions/item"},{"$ref":"#/definitions/item"}]}', '[{"foo":null},[{"foo":null},{"foo":null}],[{"foo":null},{"foo":null}]]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- wrong sub-item
+SELECT is_jsonb_valid_draft_v7('{"definitions":{"item":{"type":"array","additionalItems":false,"items":[{"$ref":"#/definitions/sub-item"},{"$ref":"#/definitions/sub-item"}]},"sub-item":{"type":"object","required":["foo"]}},"type":"array","additionalItems":false,"items":[{"$ref":"#/definitions/item"},{"$ref":"#/definitions/item"},{"$ref":"#/definitions/item"}]}', '[[{},{"foo":null}],[{"foo":null},{"foo":null}],[{"foo":null},{"foo":null}]]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- fewer items is valid
+SELECT is_jsonb_valid_draft_v7('{"definitions":{"item":{"type":"array","additionalItems":false,"items":[{"$ref":"#/definitions/sub-item"},{"$ref":"#/definitions/sub-item"}]},"sub-item":{"type":"object","required":["foo"]}},"type":"array","additionalItems":false,"items":[{"$ref":"#/definitions/item"},{"$ref":"#/definitions/item"},{"$ref":"#/definitions/item"}]}', '[[{"foo":null}],[{"foo":null}]]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- nested items
+-- valid nested array
+SELECT is_jsonb_valid_draft_v7('{"type":"array","items":{"type":"array","items":{"type":"array","items":{"type":"array","items":{"type":"number"}}}}}', '[[[[1]],[[2],[3]]],[[[4],[5],[6]]]]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- nested array with invalid type
+SELECT is_jsonb_valid_draft_v7('{"type":"array","items":{"type":"array","items":{"type":"array","items":{"type":"array","items":{"type":"number"}}}}}', '[[[["1"]],[[2],[3]]],[[[4],[5],[6]]]]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- not deep enough
+SELECT is_jsonb_valid_draft_v7('{"type":"array","items":{"type":"array","items":{"type":"array","items":{"type":"array","items":{"type":"number"}}}}}', '[[[1],[2],[3]],[[4],[5],[6]]]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- single-form items with null instance elements
+-- allows null elements
+SELECT is_jsonb_valid_draft_v7('{"items":{"type":"null"}}', '[null]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- array-form items with null instance elements
+-- allows null elements
+SELECT is_jsonb_valid_draft_v7('{"items":[{"type":"null"}]}', '[null]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+

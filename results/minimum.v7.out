@@ -1,0 +1,79 @@
+-- minimum validation
+-- above the minimum is valid
+SELECT is_jsonb_valid_draft_v7('{"minimum":1.1}', '2.6');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- boundary point is valid
+SELECT is_jsonb_valid_draft_v7('{"minimum":1.1}', '1.1');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- below the minimum is invalid
+SELECT is_jsonb_valid_draft_v7('{"minimum":1.1}', '0.6');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- ignores non-numbers
+SELECT is_jsonb_valid_draft_v7('{"minimum":1.1}', '"x"');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- minimum validation with signed integer
+-- negative above the minimum is valid
+SELECT is_jsonb_valid_draft_v7('{"minimum":-2}', '-1');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- positive above the minimum is valid
+SELECT is_jsonb_valid_draft_v7('{"minimum":-2}', '0');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- boundary point is valid
+SELECT is_jsonb_valid_draft_v7('{"minimum":-2}', '-2');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- boundary point with float is valid
+SELECT is_jsonb_valid_draft_v7('{"minimum":-2}', '-2');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- float below the minimum is invalid
+SELECT is_jsonb_valid_draft_v7('{"minimum":-2}', '-2.0001');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- int below the minimum is invalid
+SELECT is_jsonb_valid_draft_v7('{"minimum":-2}', '-3');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- ignores non-numbers
+SELECT is_jsonb_valid_draft_v7('{"minimum":-2}', '"x"');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+

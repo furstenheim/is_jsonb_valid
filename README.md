@@ -28,7 +28,7 @@ This will compile the extension and run the tests. Later in psql run:
 You can also run tests without installing postgres.
 
 ```
- rm -f is_jsonb_valid.o is_jsonb_valid.bc && docker run -it --rm --mount "type=bind,src=$(pwd),dst=/repo" pgxn/pgxn-tools     sh -c 'cd /repo && pg-start 12 && pg-build-test'  >log 2>&1
+ rm -f is_jsonb_valid.o is_jsonb_valid.bc && docker run -it --rm --mount "type=bind,src=$(pwd),dst=/repo" pgxn/pgxn-tools     sh -c 'cd /repo && make clean && pg-start 12 && pg-build-test'  >log 2>&1
 
 ```
 

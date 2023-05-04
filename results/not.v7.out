@@ -1,0 +1,90 @@
+-- not
+-- allowed
+SELECT is_jsonb_valid_draft_v7('{"not":{"type":"integer"}}', '"foo"');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- disallowed
+SELECT is_jsonb_valid_draft_v7('{"not":{"type":"integer"}}', '1');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- not multiple types
+-- valid
+SELECT is_jsonb_valid_draft_v7('{"not":{"type":["integer","boolean"]}}', '"foo"');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- mismatch
+SELECT is_jsonb_valid_draft_v7('{"not":{"type":["integer","boolean"]}}', '1');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- other mismatch
+SELECT is_jsonb_valid_draft_v7('{"not":{"type":["integer","boolean"]}}', 'true');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- not more complex schema
+-- match
+SELECT is_jsonb_valid_draft_v7('{"not":{"type":"object","properties":{"foo":{"type":"string"}}}}', '1');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- other match
+SELECT is_jsonb_valid_draft_v7('{"not":{"type":"object","properties":{"foo":{"type":"string"}}}}', '{"foo":1}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- mismatch
+SELECT is_jsonb_valid_draft_v7('{"not":{"type":"object","properties":{"foo":{"type":"string"}}}}', '{"foo":"bar"}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- forbidden property
+-- property present
+SELECT is_jsonb_valid_draft_v7('{"properties":{"foo":{"not":{}}}}', '{"foo":1,"bar":2}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- property absent
+SELECT is_jsonb_valid_draft_v7('{"properties":{"foo":{"not":{}}}}', '{"bar":1,"baz":2}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- not with boolean schema true
+-- any value is invalid
+SELECT is_jsonb_valid_draft_v7('{"not":true}', '"foo"');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- not with boolean schema false
+-- any value is valid
+SELECT is_jsonb_valid_draft_v7('{"not":false}', '"foo"');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+

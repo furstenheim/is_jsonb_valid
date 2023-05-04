@@ -1,0 +1,58 @@
+-- maximum validation
+-- below the maximum is valid
+SELECT is_jsonb_valid_draft_v7('{"maximum":3}', '2.6');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- boundary point is valid
+SELECT is_jsonb_valid_draft_v7('{"maximum":3}', '3');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- above the maximum is invalid
+SELECT is_jsonb_valid_draft_v7('{"maximum":3}', '3.5');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- ignores non-numbers
+SELECT is_jsonb_valid_draft_v7('{"maximum":3}', '"x"');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- maximum validation with unsigned integer
+-- below the maximum is invalid
+SELECT is_jsonb_valid_draft_v7('{"maximum":300}', '299.97');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- boundary point integer is valid
+SELECT is_jsonb_valid_draft_v7('{"maximum":300}', '300');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- boundary point float is valid
+SELECT is_jsonb_valid_draft_v7('{"maximum":300}', '300');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- above the maximum is invalid
+SELECT is_jsonb_valid_draft_v7('{"maximum":300}', '300.5');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
