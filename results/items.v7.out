@@ -87,10 +87,18 @@ ERROR:  Items must be array or object
 -- items with boolean schemas
 -- array with one item is valid
 SELECT is_jsonb_valid_draft_v7('{"items":[true,false]}', '[1]');
-ERROR:  Schema must be an object
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
 -- array with two items is invalid
 SELECT is_jsonb_valid_draft_v7('{"items":[true,false]}', '[1,"foo"]');
-ERROR:  Schema must be an object
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
 -- empty array is valid
 SELECT is_jsonb_valid_draft_v7('{"items":[true,false]}', '[]');
  is_jsonb_valid_draft_v7 

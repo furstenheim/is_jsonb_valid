@@ -19,6 +19,7 @@ static bool validate_required_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb 
 static bool validate_type_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
 static bool validate_properties_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
 static bool validate_items_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
+static bool validate_scalar_schema_draft_v7(Jsonb * schemaJb);
 static bool validate_min_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb);
 static bool validate_max_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb);
 static bool validate_any_of_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
@@ -59,6 +60,11 @@ static bool _is_jsonb_valid_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * 
     bool isValid = true;
     if (schemaJb == NULL)
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Schema cannot be undefined")));
+
+    if (JB_ROOT_IS_SCALAR(schemaJb)) {
+        return validate_scalar_schema_draft_v7(schemaJb);
+    }
+
     if (!JB_ROOT_IS_OBJECT(schemaJb))
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Schema must be an object")));
 
@@ -102,8 +108,6 @@ static bool _is_jsonb_valid_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * 
     return isValid;
 }
 
-
-
 /* Taken from src/backend/adt/jsonb_utils.c
  * Compare two jbvString JsonbValue values, a and b.
  *
@@ -139,7 +143,7 @@ lengthCompareJsonbStringValue(const void *a, const void *b)
 }
 
 /**
-* Scalar jsonb are stored in an array
+* Scalar jsonb are stored in an array, that's why we need to ensure that JB_ROOT_IS_SCALAR is false
 */
 static bool
 root_is_really_an_array (Jsonb * jb) {
@@ -193,6 +197,25 @@ static bool is_type_correct(Jsonb * in, char * type, int typeLen)
 				elog(ERROR, "unknown jsonb scalar type");
 		}
 	}
+}
+
+// A schema can be true or false meaning validating everything or nothing.
+static bool
+validate_scalar_schema_draft_v7(Jsonb * schemaJb) {
+    JsonbIterator *it;
+    JsonbValue	v;
+
+    if (!is_type_correct(schemaJb, "boolean", 7))
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Scalar schemas can only be booleans")));
+
+    it = JsonbIteratorInit(&schemaJb->root);
+    // scalar is saved as array of one element
+    (void) JsonbIteratorNext(&it, &v, true);
+    Assert(v.type == jbvArray);
+    (void) JsonbIteratorNext(&it, &v, true);
+
+
+   return v.val.boolean == true;
 }
 
 static bool validate_required_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema)

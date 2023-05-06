@@ -52,19 +52,35 @@ SELECT is_jsonb_valid_draft_v7('{"type":"string","oneOf":[{"minLength":2},{"maxL
 -- oneOf with boolean schemas, all true
 -- any value is invalid
 SELECT is_jsonb_valid_draft_v7('{"oneOf":[true,true,true]}', '"foo"');
-ERROR:  Schema must be an object
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
 -- oneOf with boolean schemas, one true
 -- any value is valid
 SELECT is_jsonb_valid_draft_v7('{"oneOf":[true,false,false]}', '"foo"');
-ERROR:  Schema must be an object
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
 -- oneOf with boolean schemas, more than one true
 -- any value is invalid
 SELECT is_jsonb_valid_draft_v7('{"oneOf":[true,true,false]}', '"foo"');
-ERROR:  Schema must be an object
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
 -- oneOf with boolean schemas, all false
 -- any value is invalid
 SELECT is_jsonb_valid_draft_v7('{"oneOf":[false,false,false]}', '"foo"');
-ERROR:  Schema must be an object
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
 -- oneOf complex types
 -- first oneOf valid (complex)
 SELECT is_jsonb_valid_draft_v7('{"oneOf":[{"properties":{"bar":{"type":"integer"}},"required":["bar"]},{"properties":{"foo":{"type":"string"}},"required":["foo"]}]}', '{"bar":2}');
@@ -141,13 +157,25 @@ SELECT is_jsonb_valid_draft_v7('{"type":"object","oneOf":[{"required":["foo","ba
 -- oneOf with missing optional property
 -- first oneOf valid
 SELECT is_jsonb_valid_draft_v7('{"oneOf":[{"properties":{"bar":true,"baz":true},"required":["bar"]},{"properties":{"foo":true},"required":["foo"]}]}', '{"bar":8}');
-ERROR:  Schema must be an object
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
 -- second oneOf valid
 SELECT is_jsonb_valid_draft_v7('{"oneOf":[{"properties":{"bar":true,"baz":true},"required":["bar"]},{"properties":{"foo":true},"required":["foo"]}]}', '{"foo":"foo"}');
-ERROR:  Schema must be an object
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
 -- both oneOf valid
 SELECT is_jsonb_valid_draft_v7('{"oneOf":[{"properties":{"bar":true,"baz":true},"required":["bar"]},{"properties":{"foo":true},"required":["foo"]}]}', '{"foo":"foo","bar":8}');
-ERROR:  Schema must be an object
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
 -- neither oneOf valid
 SELECT is_jsonb_valid_draft_v7('{"oneOf":[{"properties":{"bar":true,"baz":true},"required":["bar"]},{"properties":{"foo":true},"required":["foo"]}]}', '{"baz":"quux"}');
  is_jsonb_valid_draft_v7 

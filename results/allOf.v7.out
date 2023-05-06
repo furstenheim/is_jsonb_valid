@@ -81,15 +81,27 @@ SELECT is_jsonb_valid_draft_v7('{"allOf":[{"maximum":30},{"minimum":20}]}', '35'
 -- allOf with boolean schemas, all true
 -- any value is valid
 SELECT is_jsonb_valid_draft_v7('{"allOf":[true,true]}', '"foo"');
-ERROR:  Schema must be an object
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
 -- allOf with boolean schemas, some false
 -- any value is invalid
 SELECT is_jsonb_valid_draft_v7('{"allOf":[true,false]}', '"foo"');
-ERROR:  Schema must be an object
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
 -- allOf with boolean schemas, all false
 -- any value is invalid
 SELECT is_jsonb_valid_draft_v7('{"allOf":[false,false]}', '"foo"');
-ERROR:  Schema must be an object
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
 -- allOf with one empty schema
 -- any data is valid
 SELECT is_jsonb_valid_draft_v7('{"allOf":[{}]}', '1');

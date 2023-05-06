@@ -131,11 +131,19 @@ SELECT is_jsonb_valid_draft_v7('{"properties":{"$ref":{"$ref":"#/definitions/is-
 -- $ref to boolean schema true
 -- any value is valid
 SELECT is_jsonb_valid_draft_v7('{"allOf":[{"$ref":"#/definitions/bool"}],"definitions":{"bool":true}}', '"foo"');
-ERROR:  Schema must be an object
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
 -- $ref to boolean schema false
 -- any value is invalid
 SELECT is_jsonb_valid_draft_v7('{"allOf":[{"$ref":"#/definitions/bool"}],"definitions":{"bool":false}}', '"foo"');
-ERROR:  Schema must be an object
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
 -- naive replacement of $ref with its destination is not correct
 -- do not evaluate the $ref inside the enum, matching any string
 SELECT is_jsonb_valid_draft_v7('{"definitions":{"a_string":{"type":"string"}},"enum":[{"$ref":"#/definitions/a_string"}]}', '"this is a string"');

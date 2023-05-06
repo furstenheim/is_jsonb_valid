@@ -101,16 +101,32 @@ SELECT is_jsonb_valid_draft_v7('{"properties":{"foo":{"type":"array","maxItems":
 -- properties with boolean schema
 -- no property present is valid
 SELECT is_jsonb_valid_draft_v7('{"properties":{"foo":true,"bar":false}}', '{}');
-ERROR:  Schema must be an object
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
 -- only 'true' property present is valid
 SELECT is_jsonb_valid_draft_v7('{"properties":{"foo":true,"bar":false}}', '{"foo":1}');
-ERROR:  Schema must be an object
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
 -- only 'false' property present is invalid
 SELECT is_jsonb_valid_draft_v7('{"properties":{"foo":true,"bar":false}}', '{"bar":2}');
-ERROR:  Schema must be an object
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
 -- both properties present is invalid
 SELECT is_jsonb_valid_draft_v7('{"properties":{"foo":true,"bar":false}}', '{"foo":1,"bar":2}');
-ERROR:  Schema must be an object
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
 -- properties with escaped characters
 -- object with all numbers is valid
 SELECT is_jsonb_valid_draft_v7('{"properties":{"foo\nbar":{"type":"number"},"foo\"bar":{"type":"number"},"foo\\bar":{"type":"number"},"foo\rbar":{"type":"number"},"foo\tbar":{"type":"number"},"foo\fbar":{"type":"number"}}}', '{"foo\nbar":1,"foo\"bar":1,"foo\\bar":1,"foo\rbar":1,"foo\tbar":1,"foo\fbar":1}');

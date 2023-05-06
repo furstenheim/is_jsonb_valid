@@ -123,16 +123,32 @@ SELECT is_jsonb_valid_draft_v7('{"patternProperties":{"[0-9]{2,}":{"type":"boole
 -- patternProperties with boolean schemas
 -- object with property matching schema true is valid
 SELECT is_jsonb_valid_draft_v7('{"patternProperties":{"f.*":true,"b.*":false}}', '{"foo":1}');
-ERROR:  Schema must be an object
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
 -- object with property matching schema false is invalid
 SELECT is_jsonb_valid_draft_v7('{"patternProperties":{"f.*":true,"b.*":false}}', '{"bar":2}');
-ERROR:  Schema must be an object
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
 -- object with both properties is invalid
 SELECT is_jsonb_valid_draft_v7('{"patternProperties":{"f.*":true,"b.*":false}}', '{"foo":1,"bar":2}');
-ERROR:  Schema must be an object
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
 -- object with a property matching both true and false is invalid
 SELECT is_jsonb_valid_draft_v7('{"patternProperties":{"f.*":true,"b.*":false}}', '{"foobar":1}');
-ERROR:  Schema must be an object
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
 -- empty object is valid
 SELECT is_jsonb_valid_draft_v7('{"patternProperties":{"f.*":true,"b.*":false}}', '{}');
  is_jsonb_valid_draft_v7 
