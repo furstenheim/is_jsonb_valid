@@ -1104,12 +1104,13 @@ static bool validate_dependencies_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Js
 
     dependenciesJbv = get_jbv_from_key(schemaJb, "dependencies");
     if (dependenciesJbv == NULL || dependenciesJbv->type != jbvBinary)
-        return true;
+       return true;
 
     dependenciesJb = JsonbValueToJsonb(dependenciesJbv);
     it = JsonbIteratorInit(&dependenciesJb->root);
     r = JsonbIteratorNext(&it, &v, true);
     Assert(r == WJB_BEGIN_OBJECT);
+    // Iterate over dependencies
     while (isValid) {
         JsonbValue * dataProperty;
         r = JsonbIteratorNext(&it, &k, true);
@@ -1147,6 +1148,8 @@ static bool validate_dependencies_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Js
                 } else if (JB_ROOT_IS_OBJECT(dependencyJb)) {
                     isValid = isValid && _is_jsonb_valid_draft_v7(dependencyJb, dataJb, root_schema);
                 }
+            } else if (v.type == jbvBool) {
+                isValid = isValid && v.val.boolean;
             }
         }
     }

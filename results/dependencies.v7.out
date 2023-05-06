@@ -161,14 +161,14 @@ SELECT is_jsonb_valid_draft_v7('{"dependencies":{"foo":true,"bar":false}}', '{"f
 SELECT is_jsonb_valid_draft_v7('{"dependencies":{"foo":true,"bar":false}}', '{"bar":2}');
  is_jsonb_valid_draft_v7 
 -------------------------
- t
+ f
 (1 row)
 
 -- object with both properties is invalid
 SELECT is_jsonb_valid_draft_v7('{"dependencies":{"foo":true,"bar":false}}', '{"foo":1,"bar":2}');
  is_jsonb_valid_draft_v7 
 -------------------------
- t
+ f
 (1 row)
 
 -- empty object is valid
