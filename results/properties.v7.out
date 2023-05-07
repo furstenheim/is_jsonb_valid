@@ -103,14 +103,14 @@ SELECT is_jsonb_valid_draft_v7('{"properties":{"foo":{"type":"array","maxItems":
 SELECT is_jsonb_valid_draft_v7('{"properties":{"foo":true,"bar":false}}', '{}');
  is_jsonb_valid_draft_v7 
 -------------------------
- f
+ t
 (1 row)
 
 -- only 'true' property present is valid
 SELECT is_jsonb_valid_draft_v7('{"properties":{"foo":true,"bar":false}}', '{"foo":1}');
  is_jsonb_valid_draft_v7 
 -------------------------
- f
+ t
 (1 row)
 
 -- only 'false' property present is invalid

@@ -19,7 +19,7 @@ static bool validate_required_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb 
 static bool validate_type_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
 static bool validate_properties_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
 static bool validate_items_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
-static bool validate_scalar_schema_draft_v7(Jsonb * schemaJb);
+static bool validate_scalar_schema_draft_v7(Jsonb * schemaJb, Jsonb * dataJb);
 static bool validate_min_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb);
 static bool validate_max_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb);
 static bool validate_any_of_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
@@ -63,7 +63,7 @@ static bool _is_jsonb_valid_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * 
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Schema cannot be undefined")));
 
     if (JB_ROOT_IS_SCALAR(schemaJb)) {
-        return validate_scalar_schema_draft_v7(schemaJb);
+        return validate_scalar_schema_draft_v7(schemaJb, dataJb);
     }
 
     if (!JB_ROOT_IS_OBJECT(schemaJb))
@@ -202,12 +202,17 @@ static bool is_type_correct(Jsonb * in, char * type, int typeLen)
 
 // A schema can be true or false meaning validating everything or nothing.
 static bool
-validate_scalar_schema_draft_v7(Jsonb * schemaJb) {
+validate_scalar_schema_draft_v7(Jsonb * schemaJb, Jsonb * dataJb) {
     JsonbIterator *it;
     JsonbValue	v;
 
     if (!is_type_correct(schemaJb, "boolean", 7))
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Scalar schemas can only be booleans")));
+
+    if (dataJb == NULL) {
+        // If no data to validate schema does not apply
+        return true;
+    }
 
     it = JsonbIteratorInit(&schemaJb->root);
     // scalar is saved as array of one element
@@ -405,6 +410,7 @@ static bool validate_properties_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Json
                 // Mainly checking that property is not required
                 subSchemaJb = JsonbValueToJsonb(&pV);
                 isValid = isValid && _is_jsonb_valid_draft_v7(subSchemaJb, NULL, root_schema);
+
                 pR = JsonbIteratorNext(&pIt, &pK, true);
             } else {
                bool isPropertyValid;
