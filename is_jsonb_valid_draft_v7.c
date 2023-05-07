@@ -39,6 +39,7 @@ static bool _is_jsonb_valid_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * 
 static JsonbValue * get_jbv_from_key (Jsonb * in, const char * key);
 
 
+
 PG_FUNCTION_INFO_V1(is_jsonb_valid_draft_v7);
 Datum
 is_jsonb_valid_draft_v7(PG_FUNCTION_ARGS)
@@ -584,8 +585,35 @@ static bool validate_items_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * r
             }
             isValid = isValid && isItemValid;
         }
+    } else if (is_type_correct(itemsJb, "boolean", 7)) {
+        JsonbIterator *it;
+        JsonbValue	v;
+
+
+        it = JsonbIteratorInit(&itemsJb->root);
+        // scalar is saved as array of one element
+        (void) JsonbIteratorNext(&it, &v, true);
+        Assert(v.type == jbvArray);
+        (void) JsonbIteratorNext(&it, &v, true);
+
+        if (v.val.boolean) {
+            // True items is always true
+            return true;
+        } else {
+            // false items is only true if array is empty
+            JsonbIterator *dataIt;
+            JsonbIteratorToken r;
+            JsonbValue dataValue;
+
+            dataIt = JsonbIteratorInit(&dataJb->root);
+            r = JsonbIteratorNext(&dataIt, &dataValue, true);
+            Assert(r == WJB_BEGIN_ARRAY);
+            _unused(r);
+            Assert(dataValue.type == jbvArray);
+            return dataValue.val.array.nElems == 0;
+        }
     } else {
-        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Items must be array or object")));
+        ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("Items must be array or object or boolean")));
     }
 
     return isValid;

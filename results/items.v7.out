@@ -73,17 +73,33 @@ SELECT is_jsonb_valid_draft_v7('{"items":[{"type":"integer"},{"type":"string"}]}
 -- items with boolean schema (true)
 -- any array is valid
 SELECT is_jsonb_valid_draft_v7('{"items":true}', '[1,"foo",true]');
-ERROR:  Items must be array or object
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
 -- empty array is valid
 SELECT is_jsonb_valid_draft_v7('{"items":true}', '[]');
-ERROR:  Items must be array or object
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
 -- items with boolean schema (false)
 -- any non-empty array is invalid
 SELECT is_jsonb_valid_draft_v7('{"items":false}', '[1,"foo",true]');
-ERROR:  Items must be array or object
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
 -- empty array is valid
 SELECT is_jsonb_valid_draft_v7('{"items":false}', '[]');
-ERROR:  Items must be array or object
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
 -- items with boolean schemas
 -- array with one item is valid
 SELECT is_jsonb_valid_draft_v7('{"items":[true,false]}', '[1]');
