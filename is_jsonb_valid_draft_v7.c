@@ -1043,9 +1043,18 @@ static bool validate_not_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * roo
     Jsonb * notJb;
     propertyJbv = get_jbv_from_key(schemaJb, "not");
     // It cannot be array
-    if (propertyJbv == NULL || propertyJbv->type != jbvBinary) {
+    if (propertyJbv == NULL) {
         return true;
     }
+
+    if (propertyJbv->type == jbvBool) {
+        return !propertyJbv->val.boolean;
+    }
+
+    if (propertyJbv->type != jbvBinary) {
+        return true;
+    }
+
     notJb = JsonbValueToJsonb(propertyJbv);
     if (!JB_ROOT_IS_OBJECT(notJb)) {
         return true;

@@ -77,7 +77,7 @@ SELECT is_jsonb_valid_draft_v7('{"properties":{"foo":{"not":{}}}}', '{"bar":1,"b
 SELECT is_jsonb_valid_draft_v7('{"not":true}', '"foo"');
  is_jsonb_valid_draft_v7 
 -------------------------
- t
+ f
 (1 row)
 
 -- not with boolean schema false
