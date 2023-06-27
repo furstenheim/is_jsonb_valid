@@ -1,0 +1,192 @@
+-- ignore if without then or else
+-- valid when valid against lone if
+SELECT is_jsonb_valid_draft_v7('{"if":{"const":0}}', '0');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- valid when invalid against lone if
+SELECT is_jsonb_valid_draft_v7('{"if":{"const":0}}', '"hello"');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- ignore then without if
+-- valid when valid against lone then
+SELECT is_jsonb_valid_draft_v7('{"then":{"const":0}}', '0');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- valid when invalid against lone then
+SELECT is_jsonb_valid_draft_v7('{"then":{"const":0}}', '"hello"');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- ignore else without if
+-- valid when valid against lone else
+SELECT is_jsonb_valid_draft_v7('{"else":{"const":0}}', '0');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- valid when invalid against lone else
+SELECT is_jsonb_valid_draft_v7('{"else":{"const":0}}', '"hello"');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- if and then without else
+-- valid through then
+SELECT is_jsonb_valid_draft_v7('{"if":{"exclusiveMaximum":0},"then":{"minimum":-10}}', '-1');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- invalid through then
+SELECT is_jsonb_valid_draft_v7('{"if":{"exclusiveMaximum":0},"then":{"minimum":-10}}', '-100');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- valid when if test fails
+SELECT is_jsonb_valid_draft_v7('{"if":{"exclusiveMaximum":0},"then":{"minimum":-10}}', '3');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- if and else without then
+-- valid when if test passes
+SELECT is_jsonb_valid_draft_v7('{"if":{"exclusiveMaximum":0},"else":{"multipleOf":2}}', '-1');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- valid through else
+SELECT is_jsonb_valid_draft_v7('{"if":{"exclusiveMaximum":0},"else":{"multipleOf":2}}', '4');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- invalid through else
+SELECT is_jsonb_valid_draft_v7('{"if":{"exclusiveMaximum":0},"else":{"multipleOf":2}}', '3');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- validate against correct branch, then vs else
+-- valid through then
+SELECT is_jsonb_valid_draft_v7('{"if":{"exclusiveMaximum":0},"then":{"minimum":-10},"else":{"multipleOf":2}}', '-1');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- invalid through then
+SELECT is_jsonb_valid_draft_v7('{"if":{"exclusiveMaximum":0},"then":{"minimum":-10},"else":{"multipleOf":2}}', '-100');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- valid through else
+SELECT is_jsonb_valid_draft_v7('{"if":{"exclusiveMaximum":0},"then":{"minimum":-10},"else":{"multipleOf":2}}', '4');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- invalid through else
+SELECT is_jsonb_valid_draft_v7('{"if":{"exclusiveMaximum":0},"then":{"minimum":-10},"else":{"multipleOf":2}}', '3');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- non-interference across combined schemas
+-- valid, but would have been invalid through then
+SELECT is_jsonb_valid_draft_v7('{"allOf":[{"if":{"exclusiveMaximum":0}},{"then":{"minimum":-10}},{"else":{"multipleOf":2}}]}', '-100');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- valid, but would have been invalid through else
+SELECT is_jsonb_valid_draft_v7('{"allOf":[{"if":{"exclusiveMaximum":0}},{"then":{"minimum":-10}},{"else":{"multipleOf":2}}]}', '3');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- if with boolean schema true
+-- boolean schema true in if always chooses the then path (valid)
+SELECT is_jsonb_valid_draft_v7('{"if":true,"then":{"const":"then"},"else":{"const":"else"}}', '"then"');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- boolean schema true in if always chooses the then path (invalid)
+SELECT is_jsonb_valid_draft_v7('{"if":true,"then":{"const":"then"},"else":{"const":"else"}}', '"else"');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- if with boolean schema false
+-- boolean schema false in if always chooses the else path (invalid)
+SELECT is_jsonb_valid_draft_v7('{"if":false,"then":{"const":"then"},"else":{"const":"else"}}', '"then"');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- boolean schema false in if always chooses the else path (valid)
+SELECT is_jsonb_valid_draft_v7('{"if":false,"then":{"const":"then"},"else":{"const":"else"}}', '"else"');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- if appears at the end when serialized (keyword processing sequence)
+-- yes redirects to then and passes
+SELECT is_jsonb_valid_draft_v7('{"then":{"const":"yes"},"else":{"const":"other"},"if":{"maxLength":4}}', '"yes"');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- other redirects to else and passes
+SELECT is_jsonb_valid_draft_v7('{"then":{"const":"yes"},"else":{"const":"other"},"if":{"maxLength":4}}', '"other"');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- no redirects to then and fails
+SELECT is_jsonb_valid_draft_v7('{"then":{"const":"yes"},"else":{"const":"other"},"if":{"maxLength":4}}', '"no"');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- invalid redirects to else and fails
+SELECT is_jsonb_valid_draft_v7('{"then":{"const":"yes"},"else":{"const":"other"},"if":{"maxLength":4}}', '"invalid"');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+

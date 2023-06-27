@@ -18,6 +18,7 @@ static bool _is_jsonb_valid_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * 
 static bool validate_required_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
 static bool validate_type_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
 static bool validate_properties_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
+static bool validate_if_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
 static bool validate_items_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
 static bool validate_scalar_schema_draft_v7(Jsonb * schemaJb, Jsonb * dataJb);
 static bool validate_min_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb);
@@ -94,6 +95,7 @@ static bool _is_jsonb_valid_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * 
 
     isValid = isValid && validate_type_draft_v7(schemaJb, dataJb, root_schema);
     isValid = isValid && validate_properties_draft_v7(schemaJb, dataJb, root_schema);
+    isValid = isValid && validate_if_draft_v7(schemaJb, dataJb, root_schema);
     isValid = isValid && validate_items_draft_v7(schemaJb, dataJb, root_schema);
 
     isValid = isValid && validate_min_draft_v7(schemaJb, dataJb);
@@ -505,6 +507,42 @@ static bool validate_properties_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Json
             }
         }
         return isValid;
+    }
+}
+
+static bool validate_if_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema) {
+    JsonbValue * ifJbv, * elseJbv, *thenJbv;
+    bool isIfValid = true;
+    Jsonb * ifJb = NULL;
+    Jsonb * elseJb = NULL;
+    Jsonb * thenJb = NULL;
+
+    ifJbv = get_jbv_from_key(schemaJb, "if");
+    elseJbv = get_jbv_from_key(schemaJb, "else");
+    thenJbv = get_jbv_from_key(schemaJb, "then");
+
+    // If "if" property is undefined, then others are ignored
+    if (ifJbv == NULL)
+        return true;
+
+    ifJb = JsonbValueToJsonb(ifJbv);
+
+    isIfValid = _is_jsonb_valid_draft_v7(ifJb, dataJb, root_schema);
+
+    if (DEBUG_IS_JSONB_VALID) elog(INFO, isIfValid ? "ifMatches" : "if does not match");
+
+    if (isIfValid) {
+        if (thenJbv == NULL) {
+            return true;
+        }
+        thenJb = JsonbValueToJsonb(thenJbv);
+        return _is_jsonb_valid_draft_v7(thenJb, dataJb, root_schema);
+    } else {
+        if (elseJbv == NULL) {
+            return true;
+        }
+        elseJb = JsonbValueToJsonb(elseJbv);
+        return _is_jsonb_valid_draft_v7(elseJb, dataJb, root_schema);
     }
 }
 
