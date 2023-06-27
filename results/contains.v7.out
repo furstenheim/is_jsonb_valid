@@ -1,0 +1,154 @@
+-- contains keyword validation
+-- array with item matching schema (5) is valid
+SELECT is_jsonb_valid_draft_v7('{"contains":{"minimum":5}}', '[3,4,5]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- array with item matching schema (6) is valid
+SELECT is_jsonb_valid_draft_v7('{"contains":{"minimum":5}}', '[3,4,6]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- array with two items matching schema (5, 6) is valid
+SELECT is_jsonb_valid_draft_v7('{"contains":{"minimum":5}}', '[3,4,5,6]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- array without items matching schema is invalid
+SELECT is_jsonb_valid_draft_v7('{"contains":{"minimum":5}}', '[2,3,4]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- empty array is invalid
+SELECT is_jsonb_valid_draft_v7('{"contains":{"minimum":5}}', '[]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- not array is valid
+SELECT is_jsonb_valid_draft_v7('{"contains":{"minimum":5}}', '{}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- contains keyword with const keyword
+-- array with item 5 is valid
+SELECT is_jsonb_valid_draft_v7('{"contains":{"const":5}}', '[3,4,5]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- array with two items 5 is valid
+SELECT is_jsonb_valid_draft_v7('{"contains":{"const":5}}', '[3,4,5,5]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- array without item 5 is invalid
+SELECT is_jsonb_valid_draft_v7('{"contains":{"const":5}}', '[1,2,3,4]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- contains keyword with boolean schema true
+-- any non-empty array is valid
+SELECT is_jsonb_valid_draft_v7('{"contains":true}', '["foo"]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- empty array is invalid
+SELECT is_jsonb_valid_draft_v7('{"contains":true}', '[]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- contains keyword with boolean schema false
+-- any non-empty array is invalid
+SELECT is_jsonb_valid_draft_v7('{"contains":false}', '["foo"]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- empty array is invalid
+SELECT is_jsonb_valid_draft_v7('{"contains":false}', '[]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- non-arrays are valid
+SELECT is_jsonb_valid_draft_v7('{"contains":false}', '"contains does not apply to strings"');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- items + contains
+-- matches items, does not match contains
+SELECT is_jsonb_valid_draft_v7('{"items":{"multipleOf":2},"contains":{"multipleOf":3}}', '[2,4,8]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- does not match items, matches contains
+SELECT is_jsonb_valid_draft_v7('{"items":{"multipleOf":2},"contains":{"multipleOf":3}}', '[3,6,9]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- matches both items and contains
+SELECT is_jsonb_valid_draft_v7('{"items":{"multipleOf":2},"contains":{"multipleOf":3}}', '[6,12]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- matches neither items nor contains
+SELECT is_jsonb_valid_draft_v7('{"items":{"multipleOf":2},"contains":{"multipleOf":3}}', '[1,5]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- contains with false if subschema
+-- any non-empty array is valid
+SELECT is_jsonb_valid_draft_v7('{"contains":{"if":false,"else":true}}', '["foo"]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- empty array is invalid
+SELECT is_jsonb_valid_draft_v7('{"contains":{"if":false,"else":true}}', '[]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- contains with null instance elements
+-- allows null items
+SELECT is_jsonb_valid_draft_v7('{"contains":{"type":"null"}}', '[null]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+

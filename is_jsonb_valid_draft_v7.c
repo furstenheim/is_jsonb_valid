@@ -26,6 +26,7 @@ static bool validate_any_of_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * 
 static bool validate_all_of_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
 static bool validate_one_of_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
 static bool validate_unique_items_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
+static bool validate_contains_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
 static bool validate_ref_draft_v7 (JsonbValue * refJbv, Jsonb * dataJb, Jsonb * root_schema);
 static bool validate_enum_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
 static bool validate_length_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb);
@@ -99,6 +100,7 @@ static bool _is_jsonb_valid_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * 
     isValid = isValid && validate_all_of_draft_v7(schemaJb, dataJb, root_schema);
     isValid = isValid && validate_one_of_draft_v7(schemaJb, dataJb, root_schema);
     isValid = isValid && validate_unique_items_draft_v7(schemaJb, dataJb, root_schema);
+    isValid = isValid && validate_contains_draft_v7(schemaJb, dataJb, root_schema);
     isValid = isValid && validate_enum_draft_v7(schemaJb, dataJb, root_schema);
     isValid = isValid && validate_length_draft_v7(schemaJb, dataJb);
     isValid = isValid && validate_not_draft_v7(schemaJb, dataJb, root_schema);
@@ -848,6 +850,35 @@ static bool validate_unique_items_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Js
             }
         }
         return isValid;
+}
+
+
+static bool validate_contains_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema)
+{
+        JsonbValue * propertyJbv;
+        Jsonb * propertyJb;
+        JsonbIterator *it;
+        JsonbValue v;
+        JsonbIteratorToken r;
+        bool isElementFound = false;
+        propertyJbv = get_jbv_from_key(schemaJb, "contains");
+        // It cannot be array
+        if (!root_is_really_an_array(dataJb) || propertyJbv == NULL) {
+            return true;
+        }
+        propertyJb = JsonbValueToJsonb(propertyJbv);
+        it = JsonbIteratorInit(&dataJb->root);
+        r = JsonbIteratorNext(&it, &v, true);
+        Assert(r == WJB_BEGIN_ARRAY);
+        while (!isElementFound) {
+            Jsonb * subDataJb;
+            r = JsonbIteratorNext(&it, &v, true);
+            if (r == WJB_END_ARRAY)
+                break;
+            subDataJb = JsonbValueToJsonb(&v);
+            isElementFound = _is_jsonb_valid_draft_v7(propertyJb, subDataJb, root_schema);
+        }
+        return isElementFound;
 }
 
 static bool validate_ref_draft_v7 (JsonbValue * refJbv, Jsonb * dataJb, Jsonb * root_schema)
