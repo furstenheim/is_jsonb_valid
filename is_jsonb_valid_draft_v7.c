@@ -18,6 +18,7 @@ static bool _is_jsonb_valid_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * 
 static bool validate_required_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
 static bool validate_type_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
 static bool validate_properties_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
+static bool validate_properties_names_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
 static bool validate_if_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
 static bool validate_items_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
 static bool validate_scalar_schema_draft_v7(Jsonb * schemaJb, Jsonb * dataJb);
@@ -95,6 +96,7 @@ static bool _is_jsonb_valid_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * 
 
     isValid = isValid && validate_type_draft_v7(schemaJb, dataJb, root_schema);
     isValid = isValid && validate_properties_draft_v7(schemaJb, dataJb, root_schema);
+    isValid = isValid && validate_properties_names_draft_v7(schemaJb, dataJb, root_schema);
     isValid = isValid && validate_if_draft_v7(schemaJb, dataJb, root_schema);
     isValid = isValid && validate_items_draft_v7(schemaJb, dataJb, root_schema);
 
@@ -510,6 +512,43 @@ static bool validate_properties_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Json
     }
 }
 
+static bool validate_properties_names_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema) {
+    JsonbValue * propertyNamesJbv;
+    JsonbValue kJbv;
+    bool isValid = true;
+    Jsonb * propertyNamesJb = NULL;
+    Jsonb * kJb = NULL;
+    JsonbIterator * it;
+    JsonbIteratorToken r;
+
+    if (!JB_ROOT_IS_OBJECT(dataJb))
+        return true;
+
+    propertyNamesJbv = get_jbv_from_key(schemaJb, "propertyNames");
+
+    if (propertyNamesJbv == NULL)
+        return true;
+
+    propertyNamesJb = JsonbValueToJsonb(propertyNamesJbv);
+
+    it = JsonbIteratorInit(&dataJb->root);
+    r = JsonbIteratorNext(&it, &kJbv, true);
+    Assert(r == WJB_BEGIN_OBJECT);
+    Assert(kJbv.type == jbvObject);
+
+    r = JsonbIteratorNext(&it, &kJbv, true);
+    while (isValid && r != WJB_END_OBJECT) {
+        kJb = JsonbValueToJsonb(&kJbv);
+        isValid = _is_jsonb_valid_draft_v7(propertyNamesJb, kJb, root_schema);
+        // Skip value
+        r = JsonbIteratorNext(&it, &kJbv, true);
+        // Go to next key
+        r = JsonbIteratorNext(&it, &kJbv, true);
+    }
+    return isValid;
+}
+
+
 static bool validate_if_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema) {
     JsonbValue * ifJbv, * elseJbv, *thenJbv;
     bool isIfValid = true;
@@ -545,6 +584,8 @@ static bool validate_if_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root
         return _is_jsonb_valid_draft_v7(elseJb, dataJb, root_schema);
     }
 }
+
+
 
 static bool validate_items_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema) {
     JsonbValue * itemsJbv, * additionalItemsJbv;
