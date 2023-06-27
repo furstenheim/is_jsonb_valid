@@ -1,10 +1,10 @@
 ## Is jsonb valid
-![Build Status](https://travis-ci.org/furstenheim/is_jsonb_valid.svg?branch=master)
+![Build Status](https://github.com/furstenheim/is_jsonb_valid/actions/workflows/ci.yml/badge.svg)
 
 
-is_jsonb_valid is a native PostgreSQL extension to validate json schemas following [Draft4](https://tools.ietf.org/html/draft-zyp-json-schema-04).
-The extension exposes only one function `is_jsonb_valid(schema jsonb, data jsonb)` which returns a boolean depending 
-on the success of the validation.
+is_jsonb_valid is a native PostgreSQL extension to validate json schemas following [Draft4](https://tools.ietf.org/html/draft-zyp-json-schema-04). and [Draft7](https://json-schema.org/draft-07/json-schema-release-notes.html)
+The extension exposes two function `is_jsonb_valid(schema jsonb, data jsonb)` and `is_jsonb_valid_draft_v7(schema jsonb, data jsonb)` which return a boolean depending 
+on the success of the validation. `is_jsonb_valid` validates following draft 4 of json schema.
 
 Examples:
 
@@ -12,6 +12,12 @@ Examples:
     > t
     SELECT is_jsonb_valid('{"type": "object"}', '1');
     > f
+
+    SELECT is_jsonb_valid_draft_v7('{"if":{"exclusiveMaximum":0},"else":{"multipleOf":2}}', '4');
+    > t
+    SELECT is_jsonb_valid_draft_v7('{"if":{"exclusiveMaximum":0},"else":{"multipleOf":2}}', '3');
+    > f
+
 
 It passes (most of) [JSON-Schema-Test-Suite](https://github.com/json-schema-org/JSON-Schema-Test-Suite). The exceptions are:
 * $refRemote has been removed for obvious reasons.
@@ -31,7 +37,7 @@ This will compile the extension and run the tests. Later in psql run:
 You can also run tests without installing postgres.
 
 ```
- rm -f is_jsonb_valid.o is_jsonb_valid.bc && docker run -it --rm --mount "type=bind,src=$(pwd),dst=/repo" pgxn/pgxn-tools     sh -c 'cd /repo && make clean && pg-start 12 && pg-build-test'  >log 2>&1
+ docker run -it --rm --mount "type=bind,src=$(pwd),dst=/repo" pgxn/pgxn-tools     sh -c 'cd /repo && make clean && pg-start 12 && pg-build-test'  >log 2>&1
 
 ```
 
