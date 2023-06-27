@@ -108,8 +108,3 @@ SELECT is_jsonb_valid_draft_v7('{"const":9007199254740992}', '9007199254740991')
 SELECT is_jsonb_valid_draft_v7('{"const":9007199254740992}', '9007199254740992');
 -- float minus one is invalid
 SELECT is_jsonb_valid_draft_v7('{"const":9007199254740992}', '9007199254740991');
--- nul characters in strings
--- match string with nul
-SELECT is_jsonb_valid_draft_v7('{"const":"hello\u0000there"}', '"hello\u0000there"');
--- do not match string lacking nul
-SELECT is_jsonb_valid_draft_v7('{"const":"hello\u0000there"}', '"hellothere"');

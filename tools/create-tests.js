@@ -30,6 +30,9 @@ async function parseFolder (folder, version) {
     'enum.json': [
       'nul characters in strings' // postgres does not support null characters in unicode
     ],
+    'const.json': [
+      'nul characters in strings'
+    ],
     'id.json': [
       'match $ref to id', // remote ref
       'no match on enum or $ref to id' // remote ref

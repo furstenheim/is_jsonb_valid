@@ -35,6 +35,7 @@ static bool validate_num_items_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb
 static bool validate_dependencies_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
 static bool validate_pattern_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
 static bool validate_multiple_of_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb);
+static bool validate_const_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb);
 static bool _is_jsonb_valid_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
 static JsonbValue * get_jbv_from_key (Jsonb * in, const char * key);
 
@@ -106,6 +107,7 @@ static bool _is_jsonb_valid_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * 
     isValid = isValid && validate_dependencies_draft_v7(schemaJb, dataJb, root_schema);
     isValid = isValid && validate_pattern_draft_v7(schemaJb, dataJb, root_schema);
     isValid = isValid && validate_multiple_of_draft_v7(schemaJb, dataJb);
+    isValid = isValid && validate_const_draft_v7(schemaJb, dataJb);
     return isValid;
 }
 
@@ -1254,6 +1256,21 @@ static bool validate_multiple_of_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb)
                                 numeric_eq,
                                 PointerGetDatum(dividend),
                                 DirectFunctionCall1(numeric_floor, PointerGetDatum(dividend))));
+}
+
+
+static bool validate_const_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb)
+{
+    JsonbValue *constJbv;
+    Jsonb *constJb;
+    constJbv = get_jbv_from_key(schemaJb, "const");
+
+    if (constJbv == NULL) {
+        return true;
+    }
+
+    constJb = JsonbValueToJsonb(constJbv);
+    return compareJsonbContainers(&constJb->root, &dataJb->root) == 0;
 }
 
 
