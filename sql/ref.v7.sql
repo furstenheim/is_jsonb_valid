@@ -30,8 +30,6 @@ SELECT is_jsonb_valid_draft_v7('{"definitions":{"reffed":{"type":"array"}},"prop
 -- ref invalid
 SELECT is_jsonb_valid_draft_v7('{"definitions":{"reffed":{"type":"array"}},"properties":{"foo":{"$ref":"#/definitions/reffed","maxItems":2}}}', '{"foo":"string"}');
 -- $ref prevents a sibling $id from changing the base uri
--- $ref resolves to /definitions/base_foo, data does not validate
-SELECT is_jsonb_valid_draft_v7('{"$id":"http://localhost:1234/sibling_id/base/","definitions":{"foo":{"$id":"http://localhost:1234/sibling_id/foo.json","type":"string"},"base_foo":{"$comment":"this canonical uri is http://localhost:1234/sibling_id/base/foo.json","$id":"foo.json","type":"number"}},"allOf":[{"$comment":"$ref resolves to http://localhost:1234/sibling_id/base/foo.json, not http://localhost:1234/sibling_id/foo.json","$id":"http://localhost:1234/sibling_id/","$ref":"foo.json"}]}', '"a"');
 -- property named $ref that is not a reference
 -- property named $ref valid
 SELECT is_jsonb_valid_draft_v7('{"properties":{"$ref":{"type":"string"}}}', '{"$ref":"a"}');
@@ -55,25 +53,6 @@ SELECT is_jsonb_valid_draft_v7('{"definitions":{"a_string":{"type":"string"}},"e
 SELECT is_jsonb_valid_draft_v7('{"definitions":{"a_string":{"type":"string"}},"enum":[{"$ref":"#/definitions/a_string"}]}', '{"type":"string"}');
 -- match the enum exactly
 SELECT is_jsonb_valid_draft_v7('{"definitions":{"a_string":{"type":"string"}},"enum":[{"$ref":"#/definitions/a_string"}]}', '{"$ref":"#/definitions/a_string"}');
--- refs with relative uris and defs
--- invalid on inner field
-SELECT is_jsonb_valid_draft_v7('{"$id":"http://example.com/schema-relative-uri-defs1.json","properties":{"foo":{"$id":"schema-relative-uri-defs2.json","definitions":{"inner":{"properties":{"bar":{"type":"string"}}}},"allOf":[{"$ref":"#/definitions/inner"}]}},"allOf":[{"$ref":"schema-relative-uri-defs2.json"}]}', '{"foo":{"bar":1},"bar":"a"}');
--- invalid on outer field
-SELECT is_jsonb_valid_draft_v7('{"$id":"http://example.com/schema-relative-uri-defs1.json","properties":{"foo":{"$id":"schema-relative-uri-defs2.json","definitions":{"inner":{"properties":{"bar":{"type":"string"}}}},"allOf":[{"$ref":"#/definitions/inner"}]}},"allOf":[{"$ref":"schema-relative-uri-defs2.json"}]}', '{"foo":{"bar":"a"},"bar":1}');
--- valid on both fields
-SELECT is_jsonb_valid_draft_v7('{"$id":"http://example.com/schema-relative-uri-defs1.json","properties":{"foo":{"$id":"schema-relative-uri-defs2.json","definitions":{"inner":{"properties":{"bar":{"type":"string"}}}},"allOf":[{"$ref":"#/definitions/inner"}]}},"allOf":[{"$ref":"schema-relative-uri-defs2.json"}]}', '{"foo":{"bar":"a"},"bar":"a"}');
--- relative refs with absolute uris and defs
--- invalid on inner field
-SELECT is_jsonb_valid_draft_v7('{"$id":"http://example.com/schema-refs-absolute-uris-defs1.json","properties":{"foo":{"$id":"http://example.com/schema-refs-absolute-uris-defs2.json","definitions":{"inner":{"properties":{"bar":{"type":"string"}}}},"allOf":[{"$ref":"#/definitions/inner"}]}},"allOf":[{"$ref":"schema-refs-absolute-uris-defs2.json"}]}', '{"foo":{"bar":1},"bar":"a"}');
--- invalid on outer field
-SELECT is_jsonb_valid_draft_v7('{"$id":"http://example.com/schema-refs-absolute-uris-defs1.json","properties":{"foo":{"$id":"http://example.com/schema-refs-absolute-uris-defs2.json","definitions":{"inner":{"properties":{"bar":{"type":"string"}}}},"allOf":[{"$ref":"#/definitions/inner"}]}},"allOf":[{"$ref":"schema-refs-absolute-uris-defs2.json"}]}', '{"foo":{"bar":"a"},"bar":1}');
--- valid on both fields
-SELECT is_jsonb_valid_draft_v7('{"$id":"http://example.com/schema-refs-absolute-uris-defs1.json","properties":{"foo":{"$id":"http://example.com/schema-refs-absolute-uris-defs2.json","definitions":{"inner":{"properties":{"bar":{"type":"string"}}}},"allOf":[{"$ref":"#/definitions/inner"}]}},"allOf":[{"$ref":"schema-refs-absolute-uris-defs2.json"}]}', '{"foo":{"bar":"a"},"bar":"a"}');
--- simple URN base URI with $ref via the URN
--- valid under the URN IDed schema
-SELECT is_jsonb_valid_draft_v7('{"$comment":"URIs do not have to have HTTP(s) schemes","$id":"urn:uuid:deadbeef-1234-ffff-ffff-4321feebdaed","minimum":30,"properties":{"foo":{"$ref":"urn:uuid:deadbeef-1234-ffff-ffff-4321feebdaed"}}}', '{"foo":37}');
--- invalid under the URN IDed schema
-SELECT is_jsonb_valid_draft_v7('{"$comment":"URIs do not have to have HTTP(s) schemes","$id":"urn:uuid:deadbeef-1234-ffff-ffff-4321feebdaed","minimum":30,"properties":{"foo":{"$ref":"urn:uuid:deadbeef-1234-ffff-ffff-4321feebdaed"}}}', '{"foo":12}');
 -- simple URN base URI with JSON pointer
 -- a string is valid
 SELECT is_jsonb_valid_draft_v7('{"$comment":"URIs do not have to have HTTP(s) schemes","$id":"urn:uuid:deadbeef-1234-00ff-ff00-4321feebdaed","properties":{"foo":{"$ref":"#/definitions/bar"}},"definitions":{"bar":{"type":"string"}}}', '{"foo":"bar"}');
@@ -94,36 +73,6 @@ SELECT is_jsonb_valid_draft_v7('{"$comment":"RFC 8141 §2.3.1","$id":"urn:exampl
 SELECT is_jsonb_valid_draft_v7('{"$comment":"RFC 8141 §2.3.2","$id":"urn:example:weather?=op=map&lat=39.56&lon=-104.85&datetime=1969-07-21T02:56:15Z","properties":{"foo":{"$ref":"#/definitions/bar"}},"definitions":{"bar":{"type":"string"}}}', '{"foo":"bar"}');
 -- a non-string is invalid
 SELECT is_jsonb_valid_draft_v7('{"$comment":"RFC 8141 §2.3.2","$id":"urn:example:weather?=op=map&lat=39.56&lon=-104.85&datetime=1969-07-21T02:56:15Z","properties":{"foo":{"$ref":"#/definitions/bar"}},"definitions":{"bar":{"type":"string"}}}', '{"foo":12}');
--- URN base URI with URN and JSON pointer ref
--- a string is valid
-SELECT is_jsonb_valid_draft_v7('{"$id":"urn:uuid:deadbeef-1234-0000-0000-4321feebdaed","properties":{"foo":{"$ref":"urn:uuid:deadbeef-1234-0000-0000-4321feebdaed#/definitions/bar"}},"definitions":{"bar":{"type":"string"}}}', '{"foo":"bar"}');
--- a non-string is invalid
-SELECT is_jsonb_valid_draft_v7('{"$id":"urn:uuid:deadbeef-1234-0000-0000-4321feebdaed","properties":{"foo":{"$ref":"urn:uuid:deadbeef-1234-0000-0000-4321feebdaed#/definitions/bar"}},"definitions":{"bar":{"type":"string"}}}', '{"foo":12}');
--- URN base URI with URN and anchor ref
--- a string is valid
-SELECT is_jsonb_valid_draft_v7('{"$id":"urn:uuid:deadbeef-1234-ff00-00ff-4321feebdaed","properties":{"foo":{"$ref":"urn:uuid:deadbeef-1234-ff00-00ff-4321feebdaed#something"}},"definitions":{"bar":{"$id":"#something","type":"string"}}}', '{"foo":"bar"}');
--- a non-string is invalid
-SELECT is_jsonb_valid_draft_v7('{"$id":"urn:uuid:deadbeef-1234-ff00-00ff-4321feebdaed","properties":{"foo":{"$ref":"urn:uuid:deadbeef-1234-ff00-00ff-4321feebdaed#something"}},"definitions":{"bar":{"$id":"#something","type":"string"}}}', '{"foo":12}');
--- ref to if
--- a non-integer is invalid due to the $ref
-SELECT is_jsonb_valid_draft_v7('{"allOf":[{"$ref":"http://example.com/ref/if"},{"if":{"$id":"http://example.com/ref/if","type":"integer"}}]}', '"foo"');
--- an integer is valid
-SELECT is_jsonb_valid_draft_v7('{"allOf":[{"$ref":"http://example.com/ref/if"},{"if":{"$id":"http://example.com/ref/if","type":"integer"}}]}', '12');
--- ref to then
--- a non-integer is invalid due to the $ref
-SELECT is_jsonb_valid_draft_v7('{"allOf":[{"$ref":"http://example.com/ref/then"},{"then":{"$id":"http://example.com/ref/then","type":"integer"}}]}', '"foo"');
--- an integer is valid
-SELECT is_jsonb_valid_draft_v7('{"allOf":[{"$ref":"http://example.com/ref/then"},{"then":{"$id":"http://example.com/ref/then","type":"integer"}}]}', '12');
--- ref to else
--- a non-integer is invalid due to the $ref
-SELECT is_jsonb_valid_draft_v7('{"allOf":[{"$ref":"http://example.com/ref/else"},{"else":{"$id":"http://example.com/ref/else","type":"integer"}}]}', '"foo"');
--- an integer is valid
-SELECT is_jsonb_valid_draft_v7('{"allOf":[{"$ref":"http://example.com/ref/else"},{"else":{"$id":"http://example.com/ref/else","type":"integer"}}]}', '12');
--- ref with absolute-path-reference
--- a string is valid
-SELECT is_jsonb_valid_draft_v7('{"$id":"http://example.com/ref/absref.json","definitions":{"a":{"$id":"http://example.com/ref/absref/foobar.json","type":"number"},"b":{"$id":"http://example.com/absref/foobar.json","type":"string"}},"allOf":[{"$ref":"/absref/foobar.json"}]}', '"foo"');
--- an integer is invalid
-SELECT is_jsonb_valid_draft_v7('{"$id":"http://example.com/ref/absref.json","definitions":{"a":{"$id":"http://example.com/ref/absref/foobar.json","type":"number"},"b":{"$id":"http://example.com/absref/foobar.json","type":"string"}},"allOf":[{"$ref":"/absref/foobar.json"}]}', '12');
 -- $id with file URI still resolves pointers - *nix
 -- number is valid
 SELECT is_jsonb_valid_draft_v7('{"$id":"file:///folder/file.json","definitions":{"foo":{"type":"number"}},"allOf":[{"$ref":"#/definitions/foo"}]}', '1');

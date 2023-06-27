@@ -5,8 +5,9 @@ const testFolderV7 = './../test/draft4/tests/draft7'
 const ignoredTests = [
   'refRemote.json',
   'optional',
-  'definitions.json',
-  'format.json' // not implemented
+  'definitions.json', // it uses remotes schemas
+  'format.json', // not implemented
+  'unknownKeyword.json' // this seems to be about unknown remotes
 
 ]
 main()
@@ -47,7 +48,17 @@ async function parseFolder (folder, version) {
       '$ref resolves to /definitions/base_foo, data validates', // $ref by id not supported
       '$ref prevents a sibling id from changing the base uri', // $ref by id not supported
       '$ref resolves to /definitions/base_foo, data validates', // $ref by id not supported
-      'refs with quote', // we do not support url encoding in the ref
+      'refs with quote', // we do not support url encoding in the ref,
+      '$ref resolves to /definitions/base_foo, data does not validate', // remote ref
+      'URN base URI with URN and JSON pointer ref', // ref not anchored at root
+      'refs with relative uris and defs', // library only supports refs at root, not in parent schema
+      'relative refs with absolute uris and defs', // library only supports refs at root, not in parent schema
+      'simple URN base URI with $ref via the URN', // this uses $id
+      'URN base URI with URN and anchor ref', // URN ids are not supported
+      'ref to if', // this requires a remote schema
+      'ref to then', // this requires a remote schema
+      'ref to else', // this requires a remote schema
+      'ref with absolute-path-reference', // this requires a remote schema
     ]
   }
 

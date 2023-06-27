@@ -13,7 +13,10 @@ Examples:
     SELECT is_jsonb_valid('{"type": "object"}', '1');
     > f
 
-It passes all [JSON-Schema-Test-Suite](https://github.com/json-schema-org/JSON-Schema-Test-Suite), with the notable exception of `$refRemote`.
+It passes (most of) [JSON-Schema-Test-Suite](https://github.com/json-schema-org/JSON-Schema-Test-Suite). The exceptions are:
+* $refRemote has been removed for obvious reasons.
+* $ref support is limited to references nested at root, that is, something like `"$ref": "#/definitions/myschema"`. In particular, it doesn't check for `"$id"` in the chain to the root, and it doesn't support remote refs.
+* format is not supported (this is optional in the draft).
 
 ### Testing and Installation
 
