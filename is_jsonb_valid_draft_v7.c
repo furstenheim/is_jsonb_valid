@@ -21,7 +21,9 @@ static bool validate_properties_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Json
 static bool validate_items_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
 static bool validate_scalar_schema_draft_v7(Jsonb * schemaJb, Jsonb * dataJb);
 static bool validate_min_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb);
+static bool validate_exclusive_min_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb);
 static bool validate_max_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb);
+static bool validate_exclusive_max_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb);
 static bool validate_any_of_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
 static bool validate_all_of_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
 static bool validate_one_of_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
@@ -95,7 +97,9 @@ static bool _is_jsonb_valid_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * 
     isValid = isValid && validate_items_draft_v7(schemaJb, dataJb, root_schema);
 
     isValid = isValid && validate_min_draft_v7(schemaJb, dataJb);
+    isValid = isValid && validate_exclusive_min_draft_v7(schemaJb, dataJb);
     isValid = isValid && validate_max_draft_v7(schemaJb, dataJb);
+    isValid = isValid && validate_exclusive_max_draft_v7(schemaJb, dataJb);
     isValid = isValid && validate_any_of_draft_v7(schemaJb, dataJb, root_schema);
     isValid = isValid && validate_all_of_draft_v7(schemaJb, dataJb, root_schema);
     isValid = isValid && validate_one_of_draft_v7(schemaJb, dataJb, root_schema);
@@ -666,6 +670,38 @@ static bool validate_min_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb)
     return true;
 }
 
+static bool validate_exclusive_min_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb)
+{
+    JsonbIterator *it;
+    JsonbValue	v;
+    JsonbValue *minJbv;
+    // bool isValid = true;
+    if (!is_type_correct(dataJb, "number", 6))
+        return true;
+
+    minJbv = get_jbv_from_key(schemaJb, "exclusiveMinimum");
+
+    if (minJbv == NULL || minJbv->type != jbvNumeric) {
+        return true;
+    }
+    it = JsonbIteratorInit(&dataJb->root);
+    // scalar is saved as array of one element
+    (void) JsonbIteratorNext(&it, &v, true);
+    Assert(v.type == jbvArray);
+    (void) JsonbIteratorNext(&it, &v, true);
+
+    if (DatumGetBool(DirectFunctionCall2(numeric_lt, PointerGetDatum(v.val.numeric), PointerGetDatum(minJbv->val.numeric)))) {
+        if (DEBUG_IS_JSONB_VALID) elog(INFO, "Value is not bigger than exclusive minimum");
+        return false;
+    }
+
+    if (DatumGetBool(DirectFunctionCall2(numeric_eq, PointerGetDatum(v.val.numeric), PointerGetDatum(minJbv->val.numeric)))) {
+        if (DEBUG_IS_JSONB_VALID) elog(INFO, "Value is not strictly bigger than exclusive minimum");
+        return false;
+    }
+    return true;
+}
+
 static bool validate_max_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb)
 {
     JsonbIterator *it;
@@ -699,6 +735,39 @@ static bool validate_max_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb)
 
     if (DatumGetBool(DirectFunctionCall2(numeric_eq, PointerGetDatum(v.val.numeric), PointerGetDatum(maxJbv->val.numeric)))) {
         if (DEBUG_IS_JSONB_VALID) elog(INFO, "Value is not strictly smaller than maximum");
+        return false;
+    }
+    return true;
+}
+
+static bool validate_exclusive_max_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb)
+{
+    JsonbIterator *it;
+    JsonbValue	v;
+    JsonbValue *maxJbv;
+    // bool isValid = true;
+    if (!is_type_correct(dataJb, "number", 6))
+        return true;
+
+
+    maxJbv = get_jbv_from_key(schemaJb, "exclusiveMaximum");
+
+    if (maxJbv == NULL || maxJbv->type != jbvNumeric)
+        return true;
+
+    it = JsonbIteratorInit(&dataJb->root);
+    // scalar is saved as array of one element
+    (void) JsonbIteratorNext(&it, &v, true);
+    Assert(v.type == jbvArray);
+    (void) JsonbIteratorNext(&it, &v, true);
+
+    if (DatumGetBool(DirectFunctionCall2(numeric_gt, PointerGetDatum(v.val.numeric), PointerGetDatum(maxJbv->val.numeric)))) {
+        if (DEBUG_IS_JSONB_VALID) elog(INFO, "Value is not smaller than exclusive maximum");
+        return false;
+    }
+
+    if (DatumGetBool(DirectFunctionCall2(numeric_eq, PointerGetDatum(v.val.numeric), PointerGetDatum(maxJbv->val.numeric)))) {
+        if (DEBUG_IS_JSONB_VALID) elog(INFO, "Value is not strictly smaller than exclusive maximum");
         return false;
     }
     return true;
