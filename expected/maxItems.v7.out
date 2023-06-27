@@ -1,0 +1,44 @@
+-- maxItems validation
+-- shorter is valid
+SELECT is_jsonb_valid_draft_v7('{"maxItems":2}', '[1]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- exact length is valid
+SELECT is_jsonb_valid_draft_v7('{"maxItems":2}', '[1,2]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- too long is invalid
+SELECT is_jsonb_valid_draft_v7('{"maxItems":2}', '[1,2,3]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- ignores non-arrays
+SELECT is_jsonb_valid_draft_v7('{"maxItems":2}', '"foobar"');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- maxItems validation with a decimal
+-- shorter is valid
+SELECT is_jsonb_valid_draft_v7('{"maxItems":2}', '[1]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- too long is invalid
+SELECT is_jsonb_valid_draft_v7('{"maxItems":2}', '[1,2,3]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+

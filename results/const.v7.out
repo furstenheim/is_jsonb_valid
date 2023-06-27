@@ -1,0 +1,350 @@
+-- const validation
+-- same value is valid
+SELECT is_jsonb_valid_draft_v7('{"const":2}', '2');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- another value is invalid
+SELECT is_jsonb_valid_draft_v7('{"const":2}', '5');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- another type is invalid
+SELECT is_jsonb_valid_draft_v7('{"const":2}', '"a"');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- const with object
+-- same object is valid
+SELECT is_jsonb_valid_draft_v7('{"const":{"foo":"bar","baz":"bax"}}', '{"foo":"bar","baz":"bax"}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- same object with different property order is valid
+SELECT is_jsonb_valid_draft_v7('{"const":{"foo":"bar","baz":"bax"}}', '{"baz":"bax","foo":"bar"}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- another object is invalid
+SELECT is_jsonb_valid_draft_v7('{"const":{"foo":"bar","baz":"bax"}}', '{"foo":"bar"}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- another type is invalid
+SELECT is_jsonb_valid_draft_v7('{"const":{"foo":"bar","baz":"bax"}}', '[1,2]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- const with array
+-- same array is valid
+SELECT is_jsonb_valid_draft_v7('{"const":[{"foo":"bar"}]}', '[{"foo":"bar"}]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- another array item is invalid
+SELECT is_jsonb_valid_draft_v7('{"const":[{"foo":"bar"}]}', '[2]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- array with additional items is invalid
+SELECT is_jsonb_valid_draft_v7('{"const":[{"foo":"bar"}]}', '[1,2,3]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- const with null
+-- null is valid
+SELECT is_jsonb_valid_draft_v7('{"const":null}', 'null');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- not null is invalid
+SELECT is_jsonb_valid_draft_v7('{"const":null}', '0');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- const with false does not match 0
+-- false is valid
+SELECT is_jsonb_valid_draft_v7('{"const":false}', 'false');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- integer zero is invalid
+SELECT is_jsonb_valid_draft_v7('{"const":false}', '0');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- float zero is invalid
+SELECT is_jsonb_valid_draft_v7('{"const":false}', '0');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- const with true does not match 1
+-- true is valid
+SELECT is_jsonb_valid_draft_v7('{"const":true}', 'true');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- integer one is invalid
+SELECT is_jsonb_valid_draft_v7('{"const":true}', '1');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- float one is invalid
+SELECT is_jsonb_valid_draft_v7('{"const":true}', '1');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- const with [false] does not match [0]
+-- [false] is valid
+SELECT is_jsonb_valid_draft_v7('{"const":[false]}', '[false]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- [0] is invalid
+SELECT is_jsonb_valid_draft_v7('{"const":[false]}', '[0]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- [0.0] is invalid
+SELECT is_jsonb_valid_draft_v7('{"const":[false]}', '[0]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- const with [true] does not match [1]
+-- [true] is valid
+SELECT is_jsonb_valid_draft_v7('{"const":[true]}', '[true]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- [1] is invalid
+SELECT is_jsonb_valid_draft_v7('{"const":[true]}', '[1]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- [1.0] is invalid
+SELECT is_jsonb_valid_draft_v7('{"const":[true]}', '[1]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- const with {"a": false} does not match {"a": 0}
+-- {"a": false} is valid
+SELECT is_jsonb_valid_draft_v7('{"const":{"a":false}}', '{"a":false}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- {"a": 0} is invalid
+SELECT is_jsonb_valid_draft_v7('{"const":{"a":false}}', '{"a":0}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- {"a": 0.0} is invalid
+SELECT is_jsonb_valid_draft_v7('{"const":{"a":false}}', '{"a":0}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- const with {"a": true} does not match {"a": 1}
+-- {"a": true} is valid
+SELECT is_jsonb_valid_draft_v7('{"const":{"a":true}}', '{"a":true}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- {"a": 1} is invalid
+SELECT is_jsonb_valid_draft_v7('{"const":{"a":true}}', '{"a":1}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- {"a": 1.0} is invalid
+SELECT is_jsonb_valid_draft_v7('{"const":{"a":true}}', '{"a":1}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- const with 0 does not match other zero-like types
+-- false is invalid
+SELECT is_jsonb_valid_draft_v7('{"const":0}', 'false');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- integer zero is valid
+SELECT is_jsonb_valid_draft_v7('{"const":0}', '0');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- float zero is valid
+SELECT is_jsonb_valid_draft_v7('{"const":0}', '0');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- empty object is invalid
+SELECT is_jsonb_valid_draft_v7('{"const":0}', '{}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- empty array is invalid
+SELECT is_jsonb_valid_draft_v7('{"const":0}', '[]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- empty string is invalid
+SELECT is_jsonb_valid_draft_v7('{"const":0}', '""');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- const with 1 does not match true
+-- true is invalid
+SELECT is_jsonb_valid_draft_v7('{"const":1}', 'true');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- integer one is valid
+SELECT is_jsonb_valid_draft_v7('{"const":1}', '1');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- float one is valid
+SELECT is_jsonb_valid_draft_v7('{"const":1}', '1');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- const with -2.0 matches integer and float types
+-- integer -2 is valid
+SELECT is_jsonb_valid_draft_v7('{"const":-2}', '-2');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- integer 2 is invalid
+SELECT is_jsonb_valid_draft_v7('{"const":-2}', '2');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- float -2.0 is valid
+SELECT is_jsonb_valid_draft_v7('{"const":-2}', '-2');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- float 2.0 is invalid
+SELECT is_jsonb_valid_draft_v7('{"const":-2}', '2');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- float -2.00001 is invalid
+SELECT is_jsonb_valid_draft_v7('{"const":-2}', '-2.00001');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- float and integers are equal up to 64-bit representation limits
+-- integer is valid
+SELECT is_jsonb_valid_draft_v7('{"const":9007199254740992}', '9007199254740992');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- integer minus one is invalid
+SELECT is_jsonb_valid_draft_v7('{"const":9007199254740992}', '9007199254740991');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- float is valid
+SELECT is_jsonb_valid_draft_v7('{"const":9007199254740992}', '9007199254740992');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- float minus one is invalid
+SELECT is_jsonb_valid_draft_v7('{"const":9007199254740992}', '9007199254740991');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+

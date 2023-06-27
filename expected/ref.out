@@ -59,14 +59,14 @@ SELECT is_jsonb_valid('{"items":[{"type":"integer"},{"$ref":"#/items/0"}]}', '[1
 
 -- nested refs
 -- nested ref valid
-SELECT is_jsonb_valid('{"definitions":{"a":{"type":"integer"},"b":{"$ref":"#/definitions/a"},"c":{"$ref":"#/definitions/b"}},"$ref":"#/definitions/c"}', '5');
+SELECT is_jsonb_valid('{"definitions":{"a":{"type":"integer"},"b":{"$ref":"#/definitions/a"},"c":{"$ref":"#/definitions/b"}},"allOf":[{"$ref":"#/definitions/c"}]}', '5');
  is_jsonb_valid 
 ----------------
  t
 (1 row)
 
 -- nested ref invalid
-SELECT is_jsonb_valid('{"definitions":{"a":{"type":"integer"},"b":{"$ref":"#/definitions/a"},"c":{"$ref":"#/definitions/b"}},"$ref":"#/definitions/c"}', '"a"');
+SELECT is_jsonb_valid('{"definitions":{"a":{"type":"integer"},"b":{"$ref":"#/definitions/a"},"c":{"$ref":"#/definitions/b"}},"allOf":[{"$ref":"#/definitions/c"}]}', '"a"');
  is_jsonb_valid 
 ----------------
  f
@@ -104,6 +104,81 @@ SELECT is_jsonb_valid('{"properties":{"$ref":{"type":"string"}}}', '{"$ref":"a"}
 
 -- property named $ref invalid
 SELECT is_jsonb_valid('{"properties":{"$ref":{"type":"string"}}}', '{"$ref":2}');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- property named $ref, containing an actual $ref
+-- property named $ref valid
+SELECT is_jsonb_valid('{"properties":{"$ref":{"$ref":"#/definitions/is-string"}},"definitions":{"is-string":{"type":"string"}}}', '{"$ref":"a"}');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- property named $ref invalid
+SELECT is_jsonb_valid('{"properties":{"$ref":{"$ref":"#/definitions/is-string"}},"definitions":{"is-string":{"type":"string"}}}', '{"$ref":2}');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- naive replacement of $ref with its destination is not correct
+-- do not evaluate the $ref inside the enum, matching any string
+SELECT is_jsonb_valid('{"definitions":{"a_string":{"type":"string"}},"enum":[{"$ref":"#/definitions/a_string"}]}', '"this is a string"');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- match the enum exactly
+SELECT is_jsonb_valid('{"definitions":{"a_string":{"type":"string"}},"enum":[{"$ref":"#/definitions/a_string"}]}', '{"$ref":"#/definitions/a_string"}');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- id with file URI still resolves pointers - *nix
+-- number is valid
+SELECT is_jsonb_valid('{"id":"file:///folder/file.json","definitions":{"foo":{"type":"number"}},"allOf":[{"$ref":"#/definitions/foo"}]}', '1');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- non-number is invalid
+SELECT is_jsonb_valid('{"id":"file:///folder/file.json","definitions":{"foo":{"type":"number"}},"allOf":[{"$ref":"#/definitions/foo"}]}', '"a"');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- id with file URI still resolves pointers - windows
+-- number is valid
+SELECT is_jsonb_valid('{"id":"file:///c:/folder/file.json","definitions":{"foo":{"type":"number"}},"allOf":[{"$ref":"#/definitions/foo"}]}', '1');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- non-number is invalid
+SELECT is_jsonb_valid('{"id":"file:///c:/folder/file.json","definitions":{"foo":{"type":"number"}},"allOf":[{"$ref":"#/definitions/foo"}]}', '"a"');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- empty tokens in $ref json-pointer
+-- number is valid
+SELECT is_jsonb_valid('{"definitions":{"":{"definitions":{"":{"type":"number"}}}},"allOf":[{"$ref":"#/definitions//definitions/"}]}', '1');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- non-number is invalid
+SELECT is_jsonb_valid('{"definitions":{"":{"definitions":{"":{"type":"number"}}}},"allOf":[{"$ref":"#/definitions//definitions/"}]}', '"a"');
  is_jsonb_valid 
 ----------------
  f

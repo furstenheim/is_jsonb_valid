@@ -34,7 +34,6 @@ static bool validate_num_items (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_s
 static bool validate_dependencies (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
 static bool validate_pattern (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
 static bool validate_multiple_of (Jsonb * schemaJb, Jsonb * dataJb);
-static bool _is_jsonb_valid (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * root_schema);
 static JsonbValue * get_jbv_from_key (Jsonb * in, const char * key);
 
 PG_FUNCTION_INFO_V1(is_jsonb_valid);

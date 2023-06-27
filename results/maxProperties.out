@@ -41,3 +41,18 @@ SELECT is_jsonb_valid('{"maxProperties":2}', '12');
  t
 (1 row)
 
+-- maxProperties = 0 means the object is empty
+-- no properties is valid
+SELECT is_jsonb_valid('{"maxProperties":0}', '{}');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- one property is invalid
+SELECT is_jsonb_valid('{"maxProperties":0}', '{"foo":1}');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+

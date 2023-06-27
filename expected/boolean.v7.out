@@ -1,0 +1,128 @@
+-- boolean schema 'true'
+-- number is valid
+SELECT is_jsonb_valid_draft_v7('true', '1');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- string is valid
+SELECT is_jsonb_valid_draft_v7('true', '"foo"');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- boolean true is valid
+SELECT is_jsonb_valid_draft_v7('true', 'true');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- boolean false is valid
+SELECT is_jsonb_valid_draft_v7('true', 'false');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- null is valid
+SELECT is_jsonb_valid_draft_v7('true', 'null');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- object is valid
+SELECT is_jsonb_valid_draft_v7('true', '{"foo":"bar"}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- empty object is valid
+SELECT is_jsonb_valid_draft_v7('true', '{}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- array is valid
+SELECT is_jsonb_valid_draft_v7('true', '["foo"]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- empty array is valid
+SELECT is_jsonb_valid_draft_v7('true', '[]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- boolean schema 'false'
+-- number is invalid
+SELECT is_jsonb_valid_draft_v7('false', '1');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- string is invalid
+SELECT is_jsonb_valid_draft_v7('false', '"foo"');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- boolean true is invalid
+SELECT is_jsonb_valid_draft_v7('false', 'true');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- boolean false is invalid
+SELECT is_jsonb_valid_draft_v7('false', 'false');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- null is invalid
+SELECT is_jsonb_valid_draft_v7('false', 'null');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- object is invalid
+SELECT is_jsonb_valid_draft_v7('false', '{"foo":"bar"}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- empty object is invalid
+SELECT is_jsonb_valid_draft_v7('false', '{}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- array is invalid
+SELECT is_jsonb_valid_draft_v7('false', '["foo"]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- empty array is invalid
+SELECT is_jsonb_valid_draft_v7('false', '[]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+

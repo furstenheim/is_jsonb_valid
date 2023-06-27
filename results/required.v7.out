@@ -1,0 +1,117 @@
+-- required validation
+-- present required property is valid
+SELECT is_jsonb_valid_draft_v7('{"properties":{"foo":{},"bar":{}},"required":["foo"]}', '{"foo":1}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- non-present required property is invalid
+SELECT is_jsonb_valid_draft_v7('{"properties":{"foo":{},"bar":{}},"required":["foo"]}', '{"bar":1}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- ignores arrays
+SELECT is_jsonb_valid_draft_v7('{"properties":{"foo":{},"bar":{}},"required":["foo"]}', '[]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- ignores strings
+SELECT is_jsonb_valid_draft_v7('{"properties":{"foo":{},"bar":{}},"required":["foo"]}', '""');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- ignores other non-objects
+SELECT is_jsonb_valid_draft_v7('{"properties":{"foo":{},"bar":{}},"required":["foo"]}', '12');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- required default validation
+-- not required by default
+SELECT is_jsonb_valid_draft_v7('{"properties":{"foo":{}}}', '{}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- required with empty array
+-- property not required
+SELECT is_jsonb_valid_draft_v7('{"properties":{"foo":{}},"required":[]}', '{}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- required with escaped characters
+-- object with all properties present is valid
+SELECT is_jsonb_valid_draft_v7('{"required":["foo\nbar","foo\"bar","foo\\bar","foo\rbar","foo\tbar","foo\fbar"]}', '{"foo\nbar":1,"foo\"bar":1,"foo\\bar":1,"foo\rbar":1,"foo\tbar":1,"foo\fbar":1}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- object with some properties missing is invalid
+SELECT is_jsonb_valid_draft_v7('{"required":["foo\nbar","foo\"bar","foo\\bar","foo\rbar","foo\tbar","foo\fbar"]}', '{"foo\nbar":"1","foo\"bar":"1"}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- required properties whose names are Javascript object property names
+-- ignores arrays
+SELECT is_jsonb_valid_draft_v7('{"required":["__proto__","toString","constructor"]}', '[]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- ignores other non-objects
+SELECT is_jsonb_valid_draft_v7('{"required":["__proto__","toString","constructor"]}', '12');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- none of the properties mentioned
+SELECT is_jsonb_valid_draft_v7('{"required":["__proto__","toString","constructor"]}', '{}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- __proto__ present
+SELECT is_jsonb_valid_draft_v7('{"required":["__proto__","toString","constructor"]}', '{"__proto__":"foo"}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- toString present
+SELECT is_jsonb_valid_draft_v7('{"required":["__proto__","toString","constructor"]}', '{"toString":{"length":37}}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- constructor present
+SELECT is_jsonb_valid_draft_v7('{"required":["__proto__","toString","constructor"]}', '{"constructor":{"length":37}}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- all present
+SELECT is_jsonb_valid_draft_v7('{"required":["__proto__","toString","constructor"]}', '{"__proto__":12,"toString":{"length":"foo"},"constructor":37}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+

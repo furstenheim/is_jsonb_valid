@@ -7,3 +7,7 @@ coverage
 lcov.info
 *.gcno
 *.gcov.out
+*.bc
+regression.diffs
+regression.out
+log

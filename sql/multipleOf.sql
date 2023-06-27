@@ -17,3 +17,9 @@ SELECT is_jsonb_valid('{"multipleOf":1.5}', '35');
 SELECT is_jsonb_valid('{"multipleOf":0.0001}', '0.0075');
 -- 0.00751 is not multiple of 0.0001
 SELECT is_jsonb_valid('{"multipleOf":0.0001}', '0.00751');
+-- float division = inf
+-- invalid, but naive implementations may raise an overflow error
+SELECT is_jsonb_valid('{"type":"integer","multipleOf":0.123456789}', '1e+308');
+-- small multiple of large integer
+-- any integer is a multiple of 1e-8
+SELECT is_jsonb_valid('{"type":"integer","multipleOf":1e-8}', '12391239123');

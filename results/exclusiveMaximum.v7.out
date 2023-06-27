@@ -1,0 +1,29 @@
+-- exclusiveMaximum validation
+-- below the exclusiveMaximum is valid
+SELECT is_jsonb_valid_draft_v7('{"exclusiveMaximum":3}', '2.2');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- boundary point is invalid
+SELECT is_jsonb_valid_draft_v7('{"exclusiveMaximum":3}', '3');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- above the exclusiveMaximum is invalid
+SELECT is_jsonb_valid_draft_v7('{"exclusiveMaximum":3}', '3.5');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- ignores non-numbers
+SELECT is_jsonb_valid_draft_v7('{"exclusiveMaximum":3}', '"x"');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+

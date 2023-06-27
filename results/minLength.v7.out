@@ -1,0 +1,51 @@
+-- minLength validation
+-- longer is valid
+SELECT is_jsonb_valid_draft_v7('{"minLength":2}', '"foo"');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- exact length is valid
+SELECT is_jsonb_valid_draft_v7('{"minLength":2}', '"fo"');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- too short is invalid
+SELECT is_jsonb_valid_draft_v7('{"minLength":2}', '"f"');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- ignores non-strings
+SELECT is_jsonb_valid_draft_v7('{"minLength":2}', '1');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- one supplementary Unicode code point is not long enough
+SELECT is_jsonb_valid_draft_v7('{"minLength":2}', '"💩"');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- minLength validation with a decimal
+-- longer is valid
+SELECT is_jsonb_valid_draft_v7('{"minLength":2}', '"foo"');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- too short is invalid
+SELECT is_jsonb_valid_draft_v7('{"minLength":2}', '"f"');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+

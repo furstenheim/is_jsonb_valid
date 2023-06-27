@@ -127,3 +127,82 @@ SELECT is_jsonb_valid('{"dependencies":{"bar":{"properties":{"foo":{"type":"inte
  f
 (1 row)
 
+-- dependencies with escaped characters
+-- valid object 1
+SELECT is_jsonb_valid('{"dependencies":{"foo\nbar":["foo\rbar"],"foo\tbar":{"minProperties":4},"foo''bar":{"required":["foo\"bar"]},"foo\"bar":["foo''bar"]}}', '{"foo\nbar":1,"foo\rbar":2}');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- valid object 2
+SELECT is_jsonb_valid('{"dependencies":{"foo\nbar":["foo\rbar"],"foo\tbar":{"minProperties":4},"foo''bar":{"required":["foo\"bar"]},"foo\"bar":["foo''bar"]}}', '{"foo\tbar":1,"a":2,"b":3,"c":4}');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- valid object 3
+SELECT is_jsonb_valid('{"dependencies":{"foo\nbar":["foo\rbar"],"foo\tbar":{"minProperties":4},"foo''bar":{"required":["foo\"bar"]},"foo\"bar":["foo''bar"]}}', '{"foo''bar":1,"foo\"bar":2}');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- invalid object 1
+SELECT is_jsonb_valid('{"dependencies":{"foo\nbar":["foo\rbar"],"foo\tbar":{"minProperties":4},"foo''bar":{"required":["foo\"bar"]},"foo\"bar":["foo''bar"]}}', '{"foo\nbar":1,"foo":2}');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- invalid object 2
+SELECT is_jsonb_valid('{"dependencies":{"foo\nbar":["foo\rbar"],"foo\tbar":{"minProperties":4},"foo''bar":{"required":["foo\"bar"]},"foo\"bar":["foo''bar"]}}', '{"foo\tbar":1,"a":2}');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- invalid object 3
+SELECT is_jsonb_valid('{"dependencies":{"foo\nbar":["foo\rbar"],"foo\tbar":{"minProperties":4},"foo''bar":{"required":["foo\"bar"]},"foo\"bar":["foo''bar"]}}', '{"foo''bar":1}');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- invalid object 4
+SELECT is_jsonb_valid('{"dependencies":{"foo\nbar":["foo\rbar"],"foo\tbar":{"minProperties":4},"foo''bar":{"required":["foo\"bar"]},"foo\"bar":["foo''bar"]}}', '{"foo\"bar":2}');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- dependent subschema incompatible with root
+-- matches root
+SELECT is_jsonb_valid('{"properties":{"foo":{}},"dependencies":{"foo":{"properties":{"bar":{}},"additionalProperties":false}}}', '{"foo":1}');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- matches dependency
+SELECT is_jsonb_valid('{"properties":{"foo":{}},"dependencies":{"foo":{"properties":{"bar":{}},"additionalProperties":false}}}', '{"bar":1}');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- matches both
+SELECT is_jsonb_valid('{"properties":{"foo":{}},"dependencies":{"foo":{"properties":{"bar":{}},"additionalProperties":false}}}', '{"foo":1,"bar":2}');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- no dependency
+SELECT is_jsonb_valid('{"properties":{"foo":{}},"dependencies":{"foo":{"properties":{"bar":{}},"additionalProperties":false}}}', '{"baz":1}');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+

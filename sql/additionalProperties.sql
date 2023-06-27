@@ -11,7 +11,12 @@ SELECT is_jsonb_valid('{"properties":{"foo":{},"bar":{}},"patternProperties":{"^
 SELECT is_jsonb_valid('{"properties":{"foo":{},"bar":{}},"patternProperties":{"^v":{}},"additionalProperties":false}', '12');
 -- patternProperties are not additional properties
 SELECT is_jsonb_valid('{"properties":{"foo":{},"bar":{}},"patternProperties":{"^v":{}},"additionalProperties":false}', '{"foo":1,"vroom":2}');
--- additionalProperties allows a schema which should validate
+-- non-ASCII pattern with additionalProperties
+-- matching the pattern is valid
+SELECT is_jsonb_valid('{"patternProperties":{"^á":{}},"additionalProperties":false}', '{"ármányos":2}');
+-- not matching the pattern is invalid
+SELECT is_jsonb_valid('{"patternProperties":{"^á":{}},"additionalProperties":false}', '{"élmény":2}');
+-- additionalProperties with schema
 -- no additional properties is valid
 SELECT is_jsonb_valid('{"properties":{"foo":{},"bar":{}},"additionalProperties":{"type":"boolean"}}', '{"foo":1}');
 -- an additional valid property is valid
@@ -26,3 +31,9 @@ SELECT is_jsonb_valid('{"additionalProperties":{"type":"boolean"}}', '{"foo":1}'
 -- additionalProperties are allowed by default
 -- additional properties are allowed
 SELECT is_jsonb_valid('{"properties":{"foo":{},"bar":{}}}', '{"foo":1,"bar":2,"quux":true}');
+-- additionalProperties does not look in applicators
+-- properties defined in allOf are not examined
+SELECT is_jsonb_valid('{"allOf":[{"properties":{"foo":{}}}],"additionalProperties":{"type":"boolean"}}', '{"foo":1,"bar":true}');
+-- additionalProperties with null valued instance properties
+-- allows null values
+SELECT is_jsonb_valid('{"additionalProperties":{"type":"null"}}', '{"foo":null}');

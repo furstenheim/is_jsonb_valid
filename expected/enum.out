@@ -35,12 +35,62 @@ SELECT is_jsonb_valid('{"enum":[6,"foo",[],true,{"foo":12}]}', '{"foo":false}');
  f
 (1 row)
 
+-- valid object matches
+SELECT is_jsonb_valid('{"enum":[6,"foo",[],true,{"foo":12}]}', '{"foo":12}');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- extra properties in object is invalid
+SELECT is_jsonb_valid('{"enum":[6,"foo",[],true,{"foo":12}]}', '{"foo":12,"boo":42}');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- heterogeneous enum-with-null validation
+-- null is valid
+SELECT is_jsonb_valid('{"enum":[6,null]}', 'null');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- number is valid
+SELECT is_jsonb_valid('{"enum":[6,null]}', '6');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- something else is invalid
+SELECT is_jsonb_valid('{"enum":[6,null]}', '"test"');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
 -- enums in properties
 -- both properties are valid
 SELECT is_jsonb_valid('{"type":"object","properties":{"foo":{"enum":["foo"]},"bar":{"enum":["bar"]}},"required":["bar"]}', '{"foo":"foo","bar":"bar"}');
  is_jsonb_valid 
 ----------------
  t
+(1 row)
+
+-- wrong foo value
+SELECT is_jsonb_valid('{"type":"object","properties":{"foo":{"enum":["foo"]},"bar":{"enum":["bar"]}},"required":["bar"]}', '{"foo":"foot","bar":"bar"}');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- wrong bar value
+SELECT is_jsonb_valid('{"type":"object","properties":{"foo":{"enum":["foo"]},"bar":{"enum":["bar"]}},"required":["bar"]}', '{"foo":"foo","bar":"bart"}');
+ is_jsonb_valid 
+----------------
+ f
 (1 row)
 
 -- missing optional property is valid
@@ -62,5 +112,115 @@ SELECT is_jsonb_valid('{"type":"object","properties":{"foo":{"enum":["foo"]},"ba
  is_jsonb_valid 
 ----------------
  f
+(1 row)
+
+-- enum with escaped characters
+-- member 1 is valid
+SELECT is_jsonb_valid('{"enum":["foo\nbar","foo\rbar"]}', '"foo\nbar"');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- member 2 is valid
+SELECT is_jsonb_valid('{"enum":["foo\nbar","foo\rbar"]}', '"foo\rbar"');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- another string is invalid
+SELECT is_jsonb_valid('{"enum":["foo\nbar","foo\rbar"]}', '"abc"');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- enum with false does not match 0
+-- false is valid
+SELECT is_jsonb_valid('{"enum":[false]}', 'false');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- integer zero is invalid
+SELECT is_jsonb_valid('{"enum":[false]}', '0');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- float zero is invalid
+SELECT is_jsonb_valid('{"enum":[false]}', '0');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- enum with true does not match 1
+-- true is valid
+SELECT is_jsonb_valid('{"enum":[true]}', 'true');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- integer one is invalid
+SELECT is_jsonb_valid('{"enum":[true]}', '1');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- float one is invalid
+SELECT is_jsonb_valid('{"enum":[true]}', '1');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- enum with 0 does not match false
+-- false is invalid
+SELECT is_jsonb_valid('{"enum":[0]}', 'false');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- integer zero is valid
+SELECT is_jsonb_valid('{"enum":[0]}', '0');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- float zero is valid
+SELECT is_jsonb_valid('{"enum":[0]}', '0');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- enum with 1 does not match true
+-- true is invalid
+SELECT is_jsonb_valid('{"enum":[1]}', 'true');
+ is_jsonb_valid 
+----------------
+ f
+(1 row)
+
+-- integer one is valid
+SELECT is_jsonb_valid('{"enum":[1]}', '1');
+ is_jsonb_valid 
+----------------
+ t
+(1 row)
+
+-- float one is valid
+SELECT is_jsonb_valid('{"enum":[1]}', '1');
+ is_jsonb_valid 
+----------------
+ t
 (1 row)
 

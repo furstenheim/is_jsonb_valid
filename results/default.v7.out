@@ -1,0 +1,52 @@
+-- invalid type for default
+-- valid when property is specified
+SELECT is_jsonb_valid_draft_v7('{"properties":{"foo":{"type":"integer","default":[]}}}', '{"foo":13}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- still valid when the invalid default is used
+SELECT is_jsonb_valid_draft_v7('{"properties":{"foo":{"type":"integer","default":[]}}}', '{}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- invalid string value for default
+-- valid when property is specified
+SELECT is_jsonb_valid_draft_v7('{"properties":{"bar":{"type":"string","minLength":4,"default":"bad"}}}', '{"bar":"good"}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- still valid when the invalid default is used
+SELECT is_jsonb_valid_draft_v7('{"properties":{"bar":{"type":"string","minLength":4,"default":"bad"}}}', '{}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- the default keyword does not do anything if the property is missing
+-- an explicit property value is checked against maximum (passing)
+SELECT is_jsonb_valid_draft_v7('{"type":"object","properties":{"alpha":{"type":"number","maximum":3,"default":5}}}', '{"alpha":1}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- an explicit property value is checked against maximum (failing)
+SELECT is_jsonb_valid_draft_v7('{"type":"object","properties":{"alpha":{"type":"number","maximum":3,"default":5}}}', '{"alpha":5}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- missing properties are not filled in with the default
+SELECT is_jsonb_valid_draft_v7('{"type":"object","properties":{"alpha":{"type":"number","maximum":3,"default":5}}}', '{}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+

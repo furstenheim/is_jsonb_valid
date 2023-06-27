@@ -1,0 +1,259 @@
+-- dependencies
+-- neither
+SELECT is_jsonb_valid_draft_v7('{"dependencies":{"bar":["foo"]}}', '{}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- nondependant
+SELECT is_jsonb_valid_draft_v7('{"dependencies":{"bar":["foo"]}}', '{"foo":1}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- with dependency
+SELECT is_jsonb_valid_draft_v7('{"dependencies":{"bar":["foo"]}}', '{"foo":1,"bar":2}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- missing dependency
+SELECT is_jsonb_valid_draft_v7('{"dependencies":{"bar":["foo"]}}', '{"bar":2}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- ignores arrays
+SELECT is_jsonb_valid_draft_v7('{"dependencies":{"bar":["foo"]}}', '["bar"]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- ignores strings
+SELECT is_jsonb_valid_draft_v7('{"dependencies":{"bar":["foo"]}}', '"foobar"');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- ignores other non-objects
+SELECT is_jsonb_valid_draft_v7('{"dependencies":{"bar":["foo"]}}', '12');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- dependencies with empty array
+-- empty object
+SELECT is_jsonb_valid_draft_v7('{"dependencies":{"bar":[]}}', '{}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- object with one property
+SELECT is_jsonb_valid_draft_v7('{"dependencies":{"bar":[]}}', '{"bar":2}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- non-object is valid
+SELECT is_jsonb_valid_draft_v7('{"dependencies":{"bar":[]}}', '1');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- multiple dependencies
+-- neither
+SELECT is_jsonb_valid_draft_v7('{"dependencies":{"quux":["foo","bar"]}}', '{}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- nondependants
+SELECT is_jsonb_valid_draft_v7('{"dependencies":{"quux":["foo","bar"]}}', '{"foo":1,"bar":2}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- with dependencies
+SELECT is_jsonb_valid_draft_v7('{"dependencies":{"quux":["foo","bar"]}}', '{"foo":1,"bar":2,"quux":3}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- missing dependency
+SELECT is_jsonb_valid_draft_v7('{"dependencies":{"quux":["foo","bar"]}}', '{"foo":1,"quux":2}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- missing other dependency
+SELECT is_jsonb_valid_draft_v7('{"dependencies":{"quux":["foo","bar"]}}', '{"bar":1,"quux":2}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- missing both dependencies
+SELECT is_jsonb_valid_draft_v7('{"dependencies":{"quux":["foo","bar"]}}', '{"quux":1}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- multiple dependencies subschema
+-- valid
+SELECT is_jsonb_valid_draft_v7('{"dependencies":{"bar":{"properties":{"foo":{"type":"integer"},"bar":{"type":"integer"}}}}}', '{"foo":1,"bar":2}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- no dependency
+SELECT is_jsonb_valid_draft_v7('{"dependencies":{"bar":{"properties":{"foo":{"type":"integer"},"bar":{"type":"integer"}}}}}', '{"foo":"quux"}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- wrong type
+SELECT is_jsonb_valid_draft_v7('{"dependencies":{"bar":{"properties":{"foo":{"type":"integer"},"bar":{"type":"integer"}}}}}', '{"foo":"quux","bar":2}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- wrong type other
+SELECT is_jsonb_valid_draft_v7('{"dependencies":{"bar":{"properties":{"foo":{"type":"integer"},"bar":{"type":"integer"}}}}}', '{"foo":2,"bar":"quux"}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- wrong type both
+SELECT is_jsonb_valid_draft_v7('{"dependencies":{"bar":{"properties":{"foo":{"type":"integer"},"bar":{"type":"integer"}}}}}', '{"foo":"quux","bar":"quux"}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- dependencies with boolean subschemas
+-- object with property having schema true is valid
+SELECT is_jsonb_valid_draft_v7('{"dependencies":{"foo":true,"bar":false}}', '{"foo":1}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- object with property having schema false is invalid
+SELECT is_jsonb_valid_draft_v7('{"dependencies":{"foo":true,"bar":false}}', '{"bar":2}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- object with both properties is invalid
+SELECT is_jsonb_valid_draft_v7('{"dependencies":{"foo":true,"bar":false}}', '{"foo":1,"bar":2}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- empty object is valid
+SELECT is_jsonb_valid_draft_v7('{"dependencies":{"foo":true,"bar":false}}', '{}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- dependencies with escaped characters
+-- valid object 1
+SELECT is_jsonb_valid_draft_v7('{"dependencies":{"foo\nbar":["foo\rbar"],"foo\tbar":{"minProperties":4},"foo''bar":{"required":["foo\"bar"]},"foo\"bar":["foo''bar"]}}', '{"foo\nbar":1,"foo\rbar":2}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- valid object 2
+SELECT is_jsonb_valid_draft_v7('{"dependencies":{"foo\nbar":["foo\rbar"],"foo\tbar":{"minProperties":4},"foo''bar":{"required":["foo\"bar"]},"foo\"bar":["foo''bar"]}}', '{"foo\tbar":1,"a":2,"b":3,"c":4}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- valid object 3
+SELECT is_jsonb_valid_draft_v7('{"dependencies":{"foo\nbar":["foo\rbar"],"foo\tbar":{"minProperties":4},"foo''bar":{"required":["foo\"bar"]},"foo\"bar":["foo''bar"]}}', '{"foo''bar":1,"foo\"bar":2}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- invalid object 1
+SELECT is_jsonb_valid_draft_v7('{"dependencies":{"foo\nbar":["foo\rbar"],"foo\tbar":{"minProperties":4},"foo''bar":{"required":["foo\"bar"]},"foo\"bar":["foo''bar"]}}', '{"foo\nbar":1,"foo":2}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- invalid object 2
+SELECT is_jsonb_valid_draft_v7('{"dependencies":{"foo\nbar":["foo\rbar"],"foo\tbar":{"minProperties":4},"foo''bar":{"required":["foo\"bar"]},"foo\"bar":["foo''bar"]}}', '{"foo\tbar":1,"a":2}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- invalid object 3
+SELECT is_jsonb_valid_draft_v7('{"dependencies":{"foo\nbar":["foo\rbar"],"foo\tbar":{"minProperties":4},"foo''bar":{"required":["foo\"bar"]},"foo\"bar":["foo''bar"]}}', '{"foo''bar":1}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- invalid object 4
+SELECT is_jsonb_valid_draft_v7('{"dependencies":{"foo\nbar":["foo\rbar"],"foo\tbar":{"minProperties":4},"foo''bar":{"required":["foo\"bar"]},"foo\"bar":["foo''bar"]}}', '{"foo\"bar":2}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- dependent subschema incompatible with root
+-- matches root
+SELECT is_jsonb_valid_draft_v7('{"properties":{"foo":{}},"dependencies":{"foo":{"properties":{"bar":{}},"additionalProperties":false}}}', '{"foo":1}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- matches dependency
+SELECT is_jsonb_valid_draft_v7('{"properties":{"foo":{}},"dependencies":{"foo":{"properties":{"bar":{}},"additionalProperties":false}}}', '{"bar":1}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- matches both
+SELECT is_jsonb_valid_draft_v7('{"properties":{"foo":{}},"dependencies":{"foo":{"properties":{"bar":{}},"additionalProperties":false}}}', '{"foo":1,"bar":2}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- no dependency
+SELECT is_jsonb_valid_draft_v7('{"properties":{"foo":{}},"dependencies":{"foo":{"properties":{"bar":{}},"additionalProperties":false}}}', '{"baz":1}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+

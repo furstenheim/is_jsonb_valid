@@ -1,0 +1,73 @@
+-- maxProperties validation
+-- shorter is valid
+SELECT is_jsonb_valid_draft_v7('{"maxProperties":2}', '{"foo":1}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- exact length is valid
+SELECT is_jsonb_valid_draft_v7('{"maxProperties":2}', '{"foo":1,"bar":2}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- too long is invalid
+SELECT is_jsonb_valid_draft_v7('{"maxProperties":2}', '{"foo":1,"bar":2,"baz":3}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- ignores arrays
+SELECT is_jsonb_valid_draft_v7('{"maxProperties":2}', '[1,2,3]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- ignores strings
+SELECT is_jsonb_valid_draft_v7('{"maxProperties":2}', '"foobar"');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- ignores other non-objects
+SELECT is_jsonb_valid_draft_v7('{"maxProperties":2}', '12');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- maxProperties validation with a decimal
+-- shorter is valid
+SELECT is_jsonb_valid_draft_v7('{"maxProperties":2}', '{"foo":1}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- too long is invalid
+SELECT is_jsonb_valid_draft_v7('{"maxProperties":2}', '{"foo":1,"bar":2,"baz":3}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- maxProperties = 0 means the object is empty
+-- no properties is valid
+SELECT is_jsonb_valid_draft_v7('{"maxProperties":0}', '{}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- one property is invalid
+SELECT is_jsonb_valid_draft_v7('{"maxProperties":0}', '{"foo":1}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+

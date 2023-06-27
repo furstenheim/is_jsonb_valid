@@ -1,0 +1,65 @@
+-- pattern validation
+-- a matching pattern is valid
+SELECT is_jsonb_valid_draft_v7('{"pattern":"^a*$"}', '"aaa"');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- a non-matching pattern is invalid
+SELECT is_jsonb_valid_draft_v7('{"pattern":"^a*$"}', '"abc"');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- ignores booleans
+SELECT is_jsonb_valid_draft_v7('{"pattern":"^a*$"}', 'true');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- ignores integers
+SELECT is_jsonb_valid_draft_v7('{"pattern":"^a*$"}', '123');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- ignores floats
+SELECT is_jsonb_valid_draft_v7('{"pattern":"^a*$"}', '1');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- ignores objects
+SELECT is_jsonb_valid_draft_v7('{"pattern":"^a*$"}', '{}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- ignores arrays
+SELECT is_jsonb_valid_draft_v7('{"pattern":"^a*$"}', '[]');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- ignores null
+SELECT is_jsonb_valid_draft_v7('{"pattern":"^a*$"}', 'null');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- pattern is not anchored
+-- matches a substring
+SELECT is_jsonb_valid_draft_v7('{"pattern":"a+"}', '"xxaayy"');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+

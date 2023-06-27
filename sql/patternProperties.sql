@@ -35,3 +35,6 @@ SELECT is_jsonb_valid('{"patternProperties":{"[0-9]{2,}":{"type":"boolean"},"X_"
 SELECT is_jsonb_valid('{"patternProperties":{"[0-9]{2,}":{"type":"boolean"},"X_":{"type":"string"}}}', '{"a_x_3":3}');
 -- regexes are case sensitive, 2
 SELECT is_jsonb_valid('{"patternProperties":{"[0-9]{2,}":{"type":"boolean"},"X_":{"type":"string"}}}', '{"a_X_3":3}');
+-- patternProperties with null valued instance properties
+-- allows null values
+SELECT is_jsonb_valid('{"patternProperties":{"^.*bar$":{"type":"null"}}}', '{"foobar":null}');

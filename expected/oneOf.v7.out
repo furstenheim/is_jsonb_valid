@@ -1,0 +1,200 @@
+-- oneOf
+-- first oneOf valid
+SELECT is_jsonb_valid_draft_v7('{"oneOf":[{"type":"integer"},{"minimum":2}]}', '1');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- second oneOf valid
+SELECT is_jsonb_valid_draft_v7('{"oneOf":[{"type":"integer"},{"minimum":2}]}', '2.5');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- both oneOf valid
+SELECT is_jsonb_valid_draft_v7('{"oneOf":[{"type":"integer"},{"minimum":2}]}', '3');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- neither oneOf valid
+SELECT is_jsonb_valid_draft_v7('{"oneOf":[{"type":"integer"},{"minimum":2}]}', '1.5');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- oneOf with base schema
+-- mismatch base schema
+SELECT is_jsonb_valid_draft_v7('{"type":"string","oneOf":[{"minLength":2},{"maxLength":4}]}', '3');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- one oneOf valid
+SELECT is_jsonb_valid_draft_v7('{"type":"string","oneOf":[{"minLength":2},{"maxLength":4}]}', '"foobar"');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- both oneOf valid
+SELECT is_jsonb_valid_draft_v7('{"type":"string","oneOf":[{"minLength":2},{"maxLength":4}]}', '"foo"');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- oneOf with boolean schemas, all true
+-- any value is invalid
+SELECT is_jsonb_valid_draft_v7('{"oneOf":[true,true,true]}', '"foo"');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- oneOf with boolean schemas, one true
+-- any value is valid
+SELECT is_jsonb_valid_draft_v7('{"oneOf":[true,false,false]}', '"foo"');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- oneOf with boolean schemas, more than one true
+-- any value is invalid
+SELECT is_jsonb_valid_draft_v7('{"oneOf":[true,true,false]}', '"foo"');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- oneOf with boolean schemas, all false
+-- any value is invalid
+SELECT is_jsonb_valid_draft_v7('{"oneOf":[false,false,false]}', '"foo"');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- oneOf complex types
+-- first oneOf valid (complex)
+SELECT is_jsonb_valid_draft_v7('{"oneOf":[{"properties":{"bar":{"type":"integer"}},"required":["bar"]},{"properties":{"foo":{"type":"string"}},"required":["foo"]}]}', '{"bar":2}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- second oneOf valid (complex)
+SELECT is_jsonb_valid_draft_v7('{"oneOf":[{"properties":{"bar":{"type":"integer"}},"required":["bar"]},{"properties":{"foo":{"type":"string"}},"required":["foo"]}]}', '{"foo":"baz"}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- both oneOf valid (complex)
+SELECT is_jsonb_valid_draft_v7('{"oneOf":[{"properties":{"bar":{"type":"integer"}},"required":["bar"]},{"properties":{"foo":{"type":"string"}},"required":["foo"]}]}', '{"foo":"baz","bar":2}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- neither oneOf valid (complex)
+SELECT is_jsonb_valid_draft_v7('{"oneOf":[{"properties":{"bar":{"type":"integer"}},"required":["bar"]},{"properties":{"foo":{"type":"string"}},"required":["foo"]}]}', '{"foo":2,"bar":"quux"}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- oneOf with empty schema
+-- one valid - valid
+SELECT is_jsonb_valid_draft_v7('{"oneOf":[{"type":"number"},{}]}', '"foo"');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- both valid - invalid
+SELECT is_jsonb_valid_draft_v7('{"oneOf":[{"type":"number"},{}]}', '123');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- oneOf with required
+-- both invalid - invalid
+SELECT is_jsonb_valid_draft_v7('{"type":"object","oneOf":[{"required":["foo","bar"]},{"required":["foo","baz"]}]}', '{"bar":2}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- first valid - valid
+SELECT is_jsonb_valid_draft_v7('{"type":"object","oneOf":[{"required":["foo","bar"]},{"required":["foo","baz"]}]}', '{"foo":1,"bar":2}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- second valid - valid
+SELECT is_jsonb_valid_draft_v7('{"type":"object","oneOf":[{"required":["foo","bar"]},{"required":["foo","baz"]}]}', '{"foo":1,"baz":3}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- both valid - invalid
+SELECT is_jsonb_valid_draft_v7('{"type":"object","oneOf":[{"required":["foo","bar"]},{"required":["foo","baz"]}]}', '{"foo":1,"bar":2,"baz":3}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- oneOf with missing optional property
+-- first oneOf valid
+SELECT is_jsonb_valid_draft_v7('{"oneOf":[{"properties":{"bar":true,"baz":true},"required":["bar"]},{"properties":{"foo":true},"required":["foo"]}]}', '{"bar":8}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- second oneOf valid
+SELECT is_jsonb_valid_draft_v7('{"oneOf":[{"properties":{"bar":true,"baz":true},"required":["bar"]},{"properties":{"foo":true},"required":["foo"]}]}', '{"foo":"foo"}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- both oneOf valid
+SELECT is_jsonb_valid_draft_v7('{"oneOf":[{"properties":{"bar":true,"baz":true},"required":["bar"]},{"properties":{"foo":true},"required":["foo"]}]}', '{"foo":"foo","bar":8}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- neither oneOf valid
+SELECT is_jsonb_valid_draft_v7('{"oneOf":[{"properties":{"bar":true,"baz":true},"required":["bar"]},{"properties":{"foo":true},"required":["foo"]}]}', '{"baz":"quux"}');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
+-- nested oneOf, to check validation semantics
+-- null is valid
+SELECT is_jsonb_valid_draft_v7('{"oneOf":[{"oneOf":[{"type":"null"}]}]}', 'null');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ t
+(1 row)
+
+-- anything non-null is invalid
+SELECT is_jsonb_valid_draft_v7('{"oneOf":[{"oneOf":[{"type":"null"}]}]}', '123');
+ is_jsonb_valid_draft_v7 
+-------------------------
+ f
+(1 row)
+
