@@ -679,15 +679,15 @@ static bool validate_items_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * r
             isValid = isValid && isItemValid;
         }
     } else if (is_type_correct(itemsJb, "boolean", 7)) {
-        JsonbIterator *it;
+        JsonbIterator *it2;
         JsonbValue	v;
 
 
-        it = JsonbIteratorInit(&itemsJb->root);
+        it2 = JsonbIteratorInit(&itemsJb->root);
         // scalar is saved as array of one element
-        (void) JsonbIteratorNext(&it, &v, true);
+        (void) JsonbIteratorNext(&it2, &v, true);
         Assert(v.type == jbvArray);
-        (void) JsonbIteratorNext(&it, &v, true);
+        (void) JsonbIteratorNext(&it2, &v, true);
 
         if (v.val.boolean) {
             // True items is always true
@@ -695,13 +695,13 @@ static bool validate_items_draft_v7 (Jsonb * schemaJb, Jsonb * dataJb, Jsonb * r
         } else {
             // false items is only true if array is empty
             JsonbIterator *dataIt;
-            JsonbIteratorToken r;
+            JsonbIteratorToken r2;
             JsonbValue dataValue;
 
             dataIt = JsonbIteratorInit(&dataJb->root);
-            r = JsonbIteratorNext(&dataIt, &dataValue, true);
-            Assert(r == WJB_BEGIN_ARRAY);
-            _unused(r);
+            r2 = JsonbIteratorNext(&dataIt, &dataValue, true);
+            Assert(r2 == WJB_BEGIN_ARRAY);
+            _unused(r2);
             Assert(dataValue.type == jbvArray);
             return dataValue.val.array.nElems == 0;
         }
@@ -1061,7 +1061,7 @@ static bool validate_ref_draft_v7 (JsonbValue * refJbv, Jsonb * dataJb, Jsonb * 
     // We only support refs anchored at root
     if (!DatumGetBool(DirectFunctionCall2Coll(texteq,
             DEFAULT_COLLATION_OID,
-            PointerGetDatum(pathtext[0]), PointerGetDatum(cstring_to_text("#")))))
+            PointerGetDatum((const void *)((Datum *)pathtext)[0]), PointerGetDatum(cstring_to_text("#")))))
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("$ref must be anchored at root")));
     Assert(JB_ROOT_IS_OBJECT(root_schema));
     container = &root_schema->root;
@@ -1076,7 +1076,7 @@ static bool validate_ref_draft_v7 (JsonbValue * refJbv, Jsonb * dataJb, Jsonb * 
             DirectFunctionCall3Coll(
                 textregexreplace_noopt,
                 DEFAULT_COLLATION_OID,
-                PointerGetDatum(pathtext[i]),
+                PointerGetDatum((const void *)((Datum *)pathtext)[i]),
                 CStringGetTextDatum("~1"),
                 CStringGetTextDatum("/")),
             CStringGetTextDatum("~0"),
@@ -1090,7 +1090,7 @@ static bool validate_ref_draft_v7 (JsonbValue * refJbv, Jsonb * dataJb, Jsonb * 
         } else if (have_array) {
             long		lindex;
             			uint32		index;
-            			char	   *indextext = TextDatumGetCString(route);
+            			char	   *indextext = TextDatumGetCString((Datum)route);
             			char	   *endptr;
 
             			errno = 0;

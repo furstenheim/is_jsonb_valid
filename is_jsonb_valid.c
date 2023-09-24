@@ -821,7 +821,7 @@ static bool validate_ref (JsonbValue * refJbv, Jsonb * dataJb, Jsonb * root_sche
     // We only support refs anchored at root
     if (!DatumGetBool(DirectFunctionCall2Coll(texteq,
             DEFAULT_COLLATION_OID,
-            PointerGetDatum(pathtext[0]), PointerGetDatum(cstring_to_text("#")))))
+            PointerGetDatum((const void *)((Datum *)pathtext)[0]), PointerGetDatum(cstring_to_text("#")))))
         ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE), errmsg("$ref must be anchored at root")));
     Assert(JB_ROOT_IS_OBJECT(root_schema));
     container = &root_schema->root;
@@ -836,7 +836,7 @@ static bool validate_ref (JsonbValue * refJbv, Jsonb * dataJb, Jsonb * root_sche
             DirectFunctionCall3Coll(
                 textregexreplace_noopt,
                 DEFAULT_COLLATION_OID,
-                PointerGetDatum(pathtext[i]),
+                PointerGetDatum((const void *)((Datum *)pathtext)[i]),
                 CStringGetTextDatum("~1"),
                 CStringGetTextDatum("/")),
             CStringGetTextDatum("~0"),
@@ -850,7 +850,7 @@ static bool validate_ref (JsonbValue * refJbv, Jsonb * dataJb, Jsonb * root_sche
         } else if (have_array) {
             long		lindex;
             			uint32		index;
-            			char	   *indextext = TextDatumGetCString(route);
+            			char	   *indextext = TextDatumGetCString((Datum)route);
             			char	   *endptr;
 
             			errno = 0;
