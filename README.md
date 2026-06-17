@@ -41,6 +41,34 @@ You can also run tests without installing postgres.
 
 ```
 
+### Running tests interactively
+
+First terminal:
+
+```
+docker stop  pgx-test-v1 && docker rm  pgx-test-v1
+docker run -it --name pgx-test-v1 --mount "type=bind,src=$(pwd),dst=/repo" pgxn/pgxn-tools bash
+pg-start 12
+tail -f /var/log/postgresql/postgresql-12-test.log
+```
+
+Second terminal:
+
+```
+docker exec -it pgx-test-v1 bash
+cd repo/ && make clean  && make all PROFILE="-Werror" && sudo make install
+make installcheck PGUSER=postgres
+```
+
+
+## Troubleshooting
+
+If the latest version of postgres is not found, just run
+```
+docker pull pgxn/pgxn-tools
+```
+
+
 ### Benchmarking
 
 Benchmarking is always tricky, I've tried to check against a real world example, in particular tweets.
