@@ -72,14 +72,26 @@ docker pull pgxn/pgxn-tools
 ### Benchmarking
 
 Benchmarking is always tricky, I've tried to check against a real world example, in particular tweets.
-The only other extension that I know for this purpose is [postgres-json-schema](https://github.com/gavinwahl/postgres-json-schema/blob/master/postgres-json-schema--0.1.0.sql).
-For more information on how to run the benchmarks check `./tools/README.md`
+
+Newer benchmark at [pg-jason-schema](https://github.com/furstenheim/pg-jason-validator/tree/master/tools), running against 1.9M tweets
+
+| Implementation                    | rows/s (more is better) | factor |                  
+|-----------------------------------|---:|-------:| 
+| pg_jason_validator (current best) | 26,287 |     3x |
+| pg_jsonschema (compiled schema)   | 16,824 |   1.8x |                                                                
+| is_jsonb_valid (this library)     | 8,797 |     1x |             
+| pg_jsonschema (standard)          | 639 |  0.07x |
+
+Older benchmark, same idea, against [postgres-json-schema](https://github.com/gavinwahl/postgres-json-schema/blob/master/postgres-json-schema--0.1.0.sql).
+For more information on how to run the benchmarks check `./tools/README.md`. Which was the only library at the time
+
 
 | Numbers of tweets | is_jsonb_valid (ms) |  postgres-json-schema (ms) | Improvement (times)
 | --------------- | ---------------- | --------------- | ------- |
 | 10       |  34.270  | 192.678 |  5.6 |
 | 100 | 206.378 |  1975.543 | 9.6
 | 10000 | 8911.354 | 203172.464 | 22.8
+
 
 
 ### Disclaimer
